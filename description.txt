@@ -7,4 +7,4 @@ Permanent Buffs is a simple mod that allows the user better control over their b
 - This mod is client side only
 
 All the code is also on github if you want to edit the mod for your own preferences or take a look at how I coded anything.
-Github Link: 
+Github Link: https://github.com/linklight2/Permanent-Buffs
