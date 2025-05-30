@@ -1,0 +1,29 @@
+Configs: {
+	PermaBuffsConfig: {
+		DisplayName: Permanent Buffs Config
+
+		keepStationBuffs: {
+			Tooltip: This makes buffs such as the ones obtained from the Sharpening Station, Bewitching Table, etc persist after death.
+			Label: Station Buffs Ignore Death
+		}
+
+		keepAllBuffs: {
+			Tooltip: Makes all positive buffs persist after death
+			Label: All Buffs Ignore Death
+		}
+
+		permanentBuffs: {
+			Tooltip: Makes all positive buffs have an infinite duration
+			Label: Permanent Buffs
+		}
+
+		includeDebuffs: {
+			Tooltip: 
+			'''
+			Debuffs now follow all the same rules as positive buffs, including infinite duration and after death persistence.
+			This can easily result in simply dying over and over. Use at your own risk.
+			'''
+			Label: Include Debuffs
+		}
+	}
+}
