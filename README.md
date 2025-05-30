@@ -7,6 +7,8 @@ Permanent Buffs is a simple mod that allows the user better control over their b
 - Option to apply this mod to debuffs as well (why would you do this?) 
 - This mod is client side only
 
+Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490291206
+
 Possible future changes: 
 - Allow the user to further customize which buffs to permanently affect by selecting or deselecting the buff.
 - Any other changes as commented in Github or the Steam community workshop page
