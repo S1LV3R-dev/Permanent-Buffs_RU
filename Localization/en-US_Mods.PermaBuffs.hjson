@@ -18,11 +18,11 @@ Configs: {
 		}
 
 		includeDebuffs: {
-			Tooltip: 
-			'''
-			Debuffs now follow all the same rules as positive buffs, including infinite duration and after death persistence.
-			This can easily result in simply dying over and over. Use at your own risk.
-			'''
+			Tooltip:
+				'''
+				Debuffs now follow all the same rules as positive buffs, including infinite duration and after death persistence.
+				This can easily result in simply dying over and over. Use at your own risk.
+				'''
 			Label: Include Debuffs
 		}
 	}
