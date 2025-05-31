@@ -25,5 +25,10 @@ Configs: {
 				'''
 			Label: Include Debuffs
 		}
+
+		drawGoldenBorders: {
+			Tooltip: When set to true, all buffs by the mod will gain a golden frame around their icon.
+			Label: Draw Golden Borders
+		}
 	}
 }

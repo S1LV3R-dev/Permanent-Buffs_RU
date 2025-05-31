@@ -41,5 +41,11 @@ namespace PermaBuffs
         /// </summary>
         [DefaultValue(false)]
         public bool includeDebuffs;
+
+        /// <summary>
+        /// When set to true, buff icons affected by the mod will gain a golden frame.
+        /// </summary>
+        [DefaultValue(true)]
+        public bool drawGoldenBorders;
     }
 }

@@ -5,6 +5,7 @@ Permanent Buffs is a simple mod that allows the user better control over their b
 - Option to selectively apply death persistence to station buffs so you don't have to click the stations every time you respawn
 - Option to permanently extend duration of all buffs 
 - Option to apply this mod to debuffs as well (why would you do this?) 
+- Option to disable golden visuals on affected buff icons
 - This mod is client side only
 
 Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490291206
