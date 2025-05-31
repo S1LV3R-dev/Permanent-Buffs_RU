@@ -25,6 +25,15 @@ namespace PermaBuffs
         public bool permanentBuffs;
 
         /// <summary>
+        /// 60 ticks is equivalent to one second. Setting this value to 1 means most if not all buffs will persist.
+        /// Setting this value to a high number can be useful to automatically filter out certain area buffs from being permanent, as their default duration is innately small.
+        /// Ex - Happy, Campfire, Heart Lantern, etc. This setting does nothing if "Permanent Buffs" is not enabled.
+        /// </summary>
+        [DefaultValue(100)]
+        [Range(1, 10000)]
+        public int minimumDuration;
+
+        /// <summary>
         /// Set to true if station buffs should persist through death
         /// </summary>
         [DefaultValue(true)]

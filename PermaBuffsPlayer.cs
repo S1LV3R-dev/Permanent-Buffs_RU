@@ -183,8 +183,24 @@ namespace PermaBuffs
                     bool shouldPersist = isActive;
                     shouldPersist = shouldPersist && (config.includeDebuffs || !isDebuff);
                     shouldPersist = shouldPersist && (config.keepAllBuffs || (config.keepStationBuffs && isStationBuff));
+                    shouldPersist = shouldPersist && (config.minimumDuration <= timeLeft);
 
                     return shouldPersist;
+                }
+            }
+            public bool shouldIncreaseDuration
+            {
+                get
+                {
+                    PermaBuffsConfig config = PermaBuffsConfig.instance;
+
+                    bool shouldIncrease = isActive;
+                    shouldIncrease = shouldIncrease && (config.permanentBuffs);
+                    shouldIncrease = shouldIncrease && (config.includeDebuffs || !isDebuff);
+                    shouldIncrease = shouldIncrease && (timeLeft > config.minimumDuration);
+                    shouldIncrease = shouldIncrease && (!isStationBuff);
+
+                    return shouldIncrease;
                 }
             }
             /// <summary>
@@ -228,11 +244,16 @@ namespace PermaBuffs
         /// <summary>
         /// Sets the time a buff icon keeps the golden border
         /// </summary>
-        public const int TimeForGolden = 3 * 60;
+        public const int TimeForGolden = 5 * 60;
         /// <summary>
         /// The timer in ticks, caps out at TimeForGolden
         /// </summary>
         public int goldenCount = TimeForGolden;
+        /// <summary>
+        /// The timer in ticks used for permanent buff duration increase
+        /// </summary>
+        public int permaCount = 0;
+        public const int durationIncrease = 10;
 
         // This is a modified version of the original DrawBuffIcons function.
         // It inserts a golden frame around the buff icon to visually show it's modified to be permanent.
@@ -288,30 +309,33 @@ namespace PermaBuffs
             (texture2, drawPosition2, textPosition2, sourceRectangle2, mouseRectangle2, drawColor2) = (BuffDrawParams)(buffDrawParams2);
 
             int shouldDrawBorder = 0;
-            int removePos;
+            int removePos = 0;
 
             PermaBuffsPlayer modPlayer = Main.player[Main.myPlayer].GetModPlayer<PermaBuffsPlayer>();
             PermaBuffsConfig config = PermaBuffsConfig.instance;
 
-            // Looks at the draw queue and determines whether or not to draw the border
-            for (removePos = 0; removePos < modPlayer.drawQueue.Count; removePos++)
+            if (config.drawGoldenBorders)
             {
-                if (modPlayer.drawQueue[removePos].type == buffType)
+                // Looks at the draw queue and determines whether or not to draw the border
+                for (removePos = 0; removePos < modPlayer.drawQueue.Count; removePos++)
                 {
-                    shouldDrawBorder = 1;
-                    break;
-                }
-            }
-            // Fallback to golden queue if it isn't in the main drawqueue
-            if (shouldDrawBorder == 0)
-            {
-                // For golden queue buffs
-                for (int i = 0; i < modPlayer.goldenQueue.Count; i++)
-                {
-                    if (modPlayer.goldenQueue[i].type == buffType)
+                    if (modPlayer.drawQueue[removePos].type == buffType)
                     {
-                        shouldDrawBorder = 2;
+                        shouldDrawBorder = 1;
                         break;
+                    }
+                }
+                // Fallback to golden queue if it isn't in the main drawqueue
+                if (shouldDrawBorder == 0)
+                {
+                    // For golden queue buffs
+                    for (int i = 0; i < modPlayer.goldenQueue.Count; i++)
+                    {
+                        if (modPlayer.goldenQueue[i].type == buffType)
+                        {
+                            shouldDrawBorder = 2;
+                            break;
+                        }
                     }
                 }
             }
@@ -336,14 +360,16 @@ namespace PermaBuffs
                     }
                 }
             }
-            #region TmodloaderSourceCode2
-            // All code after this is Tmodloader code to finish the function
+
             BuffLoader.PostDraw(Main.spriteBatch, buffType, buffSlotOnPlayer, drawParams);
-            if (Main.TryGetBuffTime(buffSlotOnPlayer, out var buffTimeValue) && buffTimeValue > 2)
+
+            // Only show the time if no golden border was drawn
+            if (Main.TryGetBuffTime(buffSlotOnPlayer, out var buffTimeValue) && buffTimeValue > 2 && shouldDrawBorder == 0)
             {
                 string text = Lang.LocalizedDuration(new TimeSpan(0, 0, buffTimeValue / 60), abbreviated: true, showAllAvailableUnits: false);
                 Main.spriteBatch.DrawString(FontAssets.ItemStack.Value, text, textPosition, color, 0f, default(Vector2), 0.8f, SpriteEffects.None, 0f);
             }
+            #region TmodloaderSourceCode2
             if (mouseRectangle.Contains(new Point(Main.mouseX, Main.mouseY)))
             {
                 drawBuffText = buffSlotOnPlayer;
@@ -399,6 +425,7 @@ namespace PermaBuffs
 
         public override void SetStaticDefaults()
         {
+            // Loads the draw texture in async
             goldenBorder = ModContent.Request<Texture2D>("Permabuffs/buffFrame");
         }
 
@@ -425,17 +452,23 @@ namespace PermaBuffs
             {
                 BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
 
-                // Don't increase debuff time if debuffs aren't included
-                if (!buff.isActive && !config.includeDebuffs && buff.isDebuff)
-                    continue;
-
-                // Increase the time remaining on the buff.
-                if (!buff.isStationBuff && player.active && !player.dead)
+                if (buff.shouldIncreaseDuration)
                 {
-                    Player.buffTime[i] += 1;
+                    // Increase the duration every 'durationIncrease' ticks
+                    if (permaCount >= durationIncrease)
+                    {
+                        player.buffTime[i] += durationIncrease;
+                    }
+                    
                     drawQueue.Add(buff);
                 }
             }
+
+            if (permaCount >= durationIncrease)
+            {
+                permaCount = 0;
+            }
+            permaCount++;
         }
 
         /// <summary>

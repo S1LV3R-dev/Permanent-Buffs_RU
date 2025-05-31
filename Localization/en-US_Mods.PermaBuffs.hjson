@@ -27,8 +27,18 @@ Configs: {
 		}
 
 		drawGoldenBorders: {
-			Tooltip: When set to true, all buffs by the mod will gain a golden frame around their icon.
+			Tooltip: When set to true, all buffs modified by the mod will gain a golden frame around their icon.
 			Label: Draw Golden Borders
+		}
+
+		minimumDuration: {
+			Tooltip:
+				'''
+				60 ticks is equivalent to one second. Setting this value to 1 means most if not all buffs will persist.
+				Setting this value to a higher number can be useful to automatically filter out most area buffs from being permanent, as their default duration is innately small.
+				Ex - Happy, Campfire, Heart Lantern, etc. This setting does nothing if "Permanent Buffs" is not enabled.
+				'''
+			Label: Minimum Duration for Permanent Buffs
 		}
 	}
 }
