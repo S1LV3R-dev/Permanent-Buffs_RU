@@ -482,7 +482,7 @@ namespace PermaBuffs
             foreach (BuffInfo buff in pendingBuffs)
             {
                 // Re-apply buffs between sessions if set to persist through death
-                if (buff.shouldPersistThroughDeath)
+                if (buff.shouldPersistThroughDeath && !player.HasBuff(buff.type))
                 {
                     player.AddBuff(buff.type, buff.timeLeft, false);
                     goldenQueue.Add(buff);
