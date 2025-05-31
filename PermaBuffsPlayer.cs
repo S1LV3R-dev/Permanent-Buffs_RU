@@ -163,6 +163,16 @@ namespace PermaBuffs
                 }
             }
             /// <summary>
+            /// Returns if the buff spawns a pet
+            /// </summary>
+            public bool isPet
+            {
+                get
+                {
+                    return Main.vanityPet[type] || Main.lightPet[type];
+                }
+            }
+            /// <summary>
             /// Returns if the buff is a debuff
             /// </summary>
             public bool isDebuff { 
@@ -184,6 +194,7 @@ namespace PermaBuffs
                     shouldPersist = shouldPersist && (config.includeDebuffs || !isDebuff);
                     shouldPersist = shouldPersist && (config.keepAllBuffs || (config.keepStationBuffs && isStationBuff));
                     shouldPersist = shouldPersist && (config.minimumDuration <= timeLeft);
+                    shouldPersist = shouldPersist && (!isPet);
 
                     return shouldPersist;
                 }
@@ -198,7 +209,7 @@ namespace PermaBuffs
                     shouldIncrease = shouldIncrease && (config.permanentBuffs);
                     shouldIncrease = shouldIncrease && (config.includeDebuffs || !isDebuff);
                     shouldIncrease = shouldIncrease && (timeLeft > config.minimumDuration);
-                    shouldIncrease = shouldIncrease && (!isStationBuff);
+                    shouldIncrease = shouldIncrease && !(isStationBuff || isPet);
 
                     return shouldIncrease;
                 }
