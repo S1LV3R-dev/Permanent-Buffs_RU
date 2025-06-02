@@ -3,8 +3,10 @@ Permanent Buffs is a simple mod that allows the user better control over their b
 - PermaBuff: By designating a buff as a 'PermaBuff', it becomes permanent. This means the buff has an infinite duration, cannot be deleted, and will be re-applied after a death/save&quit.
 PermaBuffs are indicated by a Golden Border around the buff icon.
 - NeverBuff: By designating a buff as a 'NeverBuff', it becomes inactive. This means the buff will be blocked from applying its effects in 'Buff.Update' and force enables deletion by right clicking the buff. 
-(depending on the buff in question, force deleting it might cause unintended behaviour)
 Neverbuffs are indicated by a Purple Border around the buff icon.
+
+**Disclaimer:** Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work properly. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. 
+Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
 
 Both Permabuffs and Neverbuffs can be toggled by hovering the mouse over the buff icon and pressing their respective keybinds.
 
