@@ -19,42 +19,27 @@ namespace PermaBuffs
         public static PermaBuffsConfig instance { get { return ModContent.GetInstance<PermaBuffsConfig>(); } } 
 
         /// <summary>
-        /// Set to true if all buffs have a permanent duration
-        /// </summary>
-        [DefaultValue(true)]
-        public bool permanentBuffs;
-
-        /// <summary>
-        /// 60 ticks is equivalent to one second. Setting this value to 1 means most if not all buffs will persist.
-        /// Setting this value to a high number can be useful to automatically filter out certain area buffs from being permanent, as their default duration is innately small.
-        /// Ex - Happy, Campfire, Heart Lantern, etc. This setting does nothing if "Permanent Buffs" is not enabled.
-        /// </summary>
-        [DefaultValue(100)]
-        [Range(1, 10000)]
-        public int minimumDuration;
-
-        /// <summary>
         /// Set to true if station buffs should persist through death
         /// </summary>
         [DefaultValue(true)]
         public bool keepStationBuffs;
 
         /// <summary>
-        /// Set to true if all buffs should persist through death.
-        /// </summary>
-        [DefaultValue(false)]
-        public bool keepAllBuffs;
-
-        /// <summary>
-        /// Set to true if debuffs should be affected by the mod as well.
-        /// </summary>
-        [DefaultValue(false)]
-        public bool includeDebuffs;
-
-        /// <summary>
-        /// When set to true, buff icons affected by the mod will gain a golden frame.
+        /// Set to true if banners should be applied permanently
         /// </summary>
         [DefaultValue(true)]
-        public bool drawGoldenBorders;
+        public bool keepBannerBuffs;
+
+        /// <summary>
+        /// When set to true, buff icons affected by the mod will gain a frame.
+        /// </summary>
+        [DefaultValue(true)]
+        public bool drawBorders;
+
+        /// <summary>
+        /// When set to true, keybinding tooltips are hidden after they're shown for the first time
+        /// </summary>
+        [DefaultValue(false)]
+        public bool autoHideKeybindTooltips;
     }
 }

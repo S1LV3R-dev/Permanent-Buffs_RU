@@ -1,11 +1,18 @@
-Permanent Buffs is a simple mod that allows the user better control over their buffs. This mod should be compatible with most other mods and does not change any behaviour unless the config options are enabled.
+Permanent Buffs is a simple mod that allows the user better control over their buffs. This can be done in two ways:
 
-- Allows keeping buffs after death and after saving and quitting
-- Option to selectively apply death persistence to station buffs so you don't have to click the stations every time you respawn.
-- Option to permanently extend duration of all buffs over a certain minimum duration.
-- Option to apply this mod to debuffs as well (why would you do this?)
-- Option to disable golden visuals on affected buff icons
-- This mod is client side only
+- PermaBuff: By designating a buff as a 'PermaBuff', it becomes permanent. This means the buff has an infinite duration, cannot be deleted, and will be re-applied after a death/save&quit.
+PermaBuffs are indicated by a Golden Border around the buff icon.
+- NeverBuff: By designating a buff as a 'NeverBuff', it becomes inactive. This means the buff will be blocked from applying its effects in 'Buff.Update' and force enables deletion by right clicking the buff. 
+(depending on the buff in question, force deleting it might cause unintended behaviour)
+Neverbuffs are indicated by a Purple Border around the buff icon.
+
+Both Permabuffs and Neverbuffs can be toggled by hovering the mouse over the buff icon and pressing their respective keybinds.
+
+This mod should be compatible with most other mods and does not change any behaviour unless the config options are enabled. Some additional features are:
+- Option to selectively apply death/save&quit persistence to station buffs, so you don't have to click the stations every time you respawn.
+- Option to selectively apply death/save&quit persistence to banners, so that they remain wherever you go once placed.
+- Option to disable visuals on affected buff icons.
+- Option to hide additional keybind tooltips once the keybinds are bound.
 
 All the code is also on github if you want to edit the mod for your own preferences or take a look at how I coded anything.
 Github Link: https://github.com/linklight2/Permanent-Buffs

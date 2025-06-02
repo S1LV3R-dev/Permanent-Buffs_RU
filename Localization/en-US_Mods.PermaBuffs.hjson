@@ -7,38 +7,48 @@ Configs: {
 			Label: Station Buffs Ignore Death
 		}
 
-		keepAllBuffs: {
-			Tooltip: Makes all positive buffs persist after death
-			Label: All Buffs Ignore Death
+		keepBannerBuffs: {
+			Tooltip: This lets you permanently keep buffs you've recieved from banners anywhere you go.
+			Label: Permanent Banners
 		}
 
-		permanentBuffs: {
-			Tooltip: Makes all positive buffs have an infinite duration
-			Label: Permanent Buffs
+		drawBorders: {
+			Tooltip: When set to true, all buffs modified by the mod will gain a golden frame around their icon. Buffs set to be blocked will gain a purple frame.
+			Label: Draw Borders
 		}
 
-		includeDebuffs: {
-			Tooltip:
-				'''
-				Debuffs now follow all the same rules as positive buffs, including infinite duration and after death persistence.
-				This can easily result in simply dying over and over. Use at your own risk.
-				'''
-			Label: Include Debuffs
+		autoHideKeybindTooltips: {
+			Tooltip: When set to true, keybind tooltips are hidden after they're shown for the first time. This has no effect if you have not bound said keybind in the controls.
+			Label: Auto Hide Keybind Tooltips
 		}
+	}
+}
 
-		drawGoldenBorders: {
-			Tooltip: When set to true, all buffs modified by the mod will gain a golden frame around their icon.
-			Label: Draw Golden Borders
-		}
+ToggleBuffAlwaysPermanent: {
+	DisplayName: Toggle Always Permanent
+	Tooltip:
+		'''
+		Press [c/ff0000:{0}] to save this as a [c/ffd700:Permabuff].
+		[c/ffd700:PermaBuffs] are always kept [c/ffd700:permanently active].
+		'''
+}
 
-		minimumDuration: {
-			Tooltip:
-				'''
-				60 ticks is equivalent to one second. Setting this value to 1 means most if not all buffs will persist.
-				Setting this value to a higher number can be useful to automatically filter out most area buffs from being permanent, as their default duration is innately small.
-				Ex - Happy, Campfire, Heart Lantern, etc. This setting does nothing if "Permanent Buffs" is not enabled.
-				'''
-			Label: Minimum Duration for Permanent Buffs
-		}
+ToggleBuffNeverPermanent: {
+	DisplayName: Toggle Never Permanent
+	Tooltip:
+		'''
+		Press [c/ff0000:{0}] to save this as a [c/9370db:NeverBuff].
+		[c/9370db:NeverBuffs] are partially blocked from applying to the player and can almost always be removed.
+		'''
+}
+
+NotBound: ": <Not bound, set it in your control settings>"
+
+Keybinds: {
+	"Toggle Buff Always Permanent.DisplayName": Toggle Buff Is Always Permanent
+
+	"Toggle Buff Never Permanent": {
+		$parentVal: Toggle Buff Is Never Permanent
+		DisplayName: Toggle Buff Never Permanent
 	}
 }
