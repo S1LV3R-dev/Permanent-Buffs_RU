@@ -305,18 +305,21 @@ namespace PermaBuffs
             // Make sure the texures are properly loaded
             if (modPlayer.neverPermanent[buffType])
             {
-                if (purpleBorder == null)
+                /*if (purpleBorder == null)
                 {
                     purpleBorder = ModContent.Request<Texture2D>("Permabuffs/neverBuffFrame", ReLogic.Content.AssetRequestMode.ImmediateLoad);
                 }
+                */
                 texture2 = purpleBorder.Value;
             }
             else
             {
+                /*
                 if (goldenBorder == null)
                 {
                     goldenBorder = ModContent.Request<Texture2D>("Permabuffs/buffFrame", ReLogic.Content.AssetRequestMode.ImmediateLoad);
                 }
+                */
                 texture2 = goldenBorder.Value;
             }
 
