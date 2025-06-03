@@ -1019,6 +1019,7 @@ namespace PermaBuffs
                     /*
                     meleeCrit += 10;
                     rangedCrit += 10;
+                    magicCrit += 10;
                     */
                 }
                 else if (player.buffType[j] == 116)
@@ -1721,7 +1722,6 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 322)
                 {
                     if (player.ownedProjectileCounts[946] > 0)
-                    {
                         player.empressBlade = true;
 
                     if (!player.empressBlade)
@@ -2219,9 +2219,9 @@ namespace PermaBuffs
                     bool flag7 = true;
                     if (player.ownedProjectileCounts[111] > 0)
                         flag7 = false;
-                    {
-                    }
 
+                    if (flag7 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 111, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 148)
                 {
@@ -2252,7 +2252,10 @@ namespace PermaBuffs
                                 break;
                         }
                     }
+
                     player.GetDamage(DamageClass.Generic) += 0.2f;
+                    /*
+                    meleeDamage += 0.2f;
                     magicDamage += 0.2f;
                     rangedDamage += 0.2f;
                     minionDamage += 0.2f;
