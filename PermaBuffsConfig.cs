@@ -16,7 +16,7 @@ namespace PermaBuffs
     {
         public override bool AcceptClientChanges(ModConfig pendingConfig, int whoAmI, ref NetworkText message) => true;
         public override ConfigScope Mode => ConfigScope.ClientSide;
-        public static PermaBuffsConfig instance { get { return ModContent.GetInstance<PermaBuffsConfig>(); } } 
+        public static PermaBuffsConfig instance { get { return ModContent.GetInstance<PermaBuffsConfig>(); } }
 
         /// <summary>
         /// Set to true if station buffs should persist through death
@@ -29,6 +29,9 @@ namespace PermaBuffs
         /// </summary>
         [DefaultValue(true)]
         public bool keepBannerBuffs;
+
+        [DefaultValue(false)]
+        public bool doNotApplyBuffsAfterDeathOrLoad;
 
         /// <summary>
         /// When set to true, buff icons affected by the mod will gain a frame.

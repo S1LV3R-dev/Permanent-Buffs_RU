@@ -15,6 +15,10 @@ using Terraria.GameInput;
 using Steamworks;
 using Terraria.Localization;
 using Terraria.UI.Chat;
+using tModPorter;
+using Terraria.ModLoader.Config;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Terraria.Enums;
 
 
 namespace PermaBuffs
@@ -123,6 +127,7 @@ namespace PermaBuffs
                     shouldPersist = shouldPersist || (config.keepBannerBuffs && type == BuffID.MonsterBanner);
                     shouldPersist = shouldPersist || modPlayer.alwaysPermanent[type];
                     shouldPersist = shouldPersist && !modPlayer.neverPermanent[type];
+                    shouldPersist = shouldPersist && !config.doNotApplyBuffsAfterDeathOrLoad;
 
                     return shouldPersist;
                 }
@@ -302,7 +307,7 @@ namespace PermaBuffs
 
             
             Texture2D texture2;
-            // Make sure the texures are properly loaded
+            // Load textures
             if (modPlayer.neverPermanent[buffType])
             {
                 /*if (purpleBorder == null)
@@ -317,7 +322,7 @@ namespace PermaBuffs
                 /*
                 if (goldenBorder == null)
                 {
-                    goldenBorder = ModContent.Request<Texture2D>("Permabuffs/buffFrame", ReLogic.Content.AssetRequestMode.ImmediateLoad);
+                    goldaenBorder = ModContent.Request<Texture2D>("Permabuffs/buffFrame", ReLogic.Content.AssetRequestMode.ImmediateLoad);
                 }
                 */
                 texture2 = goldenBorder.Value;
@@ -428,7 +433,7 @@ namespace PermaBuffs
                 {
                     Main.TryRemovingBuff(buffSlotOnPlayer, buffType);
 
-                    // The buff was not deleted
+                    // The buff was not deleted, force delete it
                     if (modPlayer.neverPermanent[buffType] && buffType == player.buffType[buffSlotOnPlayer])
                     {
                         player.DelBuff(buffSlotOnPlayer);
@@ -699,35 +704,25 @@ namespace PermaBuffs
 
         internal static void UpdateBuffs(On_Player.orig_UpdateBuffs orig, Player player, int i)
         {
-            #region TmodloaderSourceCode
-
-            if (player.soulDrain > 0 && ((Entity)player).whoAmI == Main.myPlayer)
-            {
+            if (player.soulDrain > 0 && player.whoAmI == Main.myPlayer)
                 player.AddBuff(151, 2);
-            }
+
             if (Main.dontStarveWorld)
-            {
                 player.UpdateStarvingState(withEmote: true);
-            }
 
             for (int j = 0; j < Player.MaxBuffs; j++)
             {
                 if (player.buffType[j] <= 0 || player.buffTime[j] <= 0)
-                {
                     continue;
-                }
-
-                #endregion
 
                 PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
                 int buffType = player.buffType[j];
 
                 // Don't decrement the time if it is a permabuff
-                if (((Entity)player).whoAmI == Main.myPlayer && !BuffID.Sets.TimeLeftDoesNotDecrease[player.buffType[j]] && !modPlayer.alwaysPermanent[buffType])
-                {
+                if (player.whoAmI == Main.myPlayer && !BuffID.Sets.TimeLeftDoesNotDecrease[player.buffType[j]] && !modPlayer.alwaysPermanent[buffType])
                     player.buffTime[j]--;
-                }
 
+                //TML: player will be used at the very end of player scope.
                 int originalIndex = j;
 
                 // Skip applying the buff if it is a neverbuff
@@ -736,7 +731,7 @@ namespace PermaBuffs
                     continue;
                 }
 
-                #region TmodloaderSourceCode
+                #region TmodloaderCode
 
                 if (player.buffType[j] == 1)
                 {
@@ -755,9 +750,19 @@ namespace PermaBuffs
                     player.manaRegenDelayBonus += 0.5f;
                     player.manaRegenBonus += 10;
                 }
+                // TML:
+                // The changes to player block exist to fix the Sharpening Station's armor penetration bonus
+                // being able to be applied to non-melee weapons (most notably summons) by holding a melee weapon.
+                // - Thomas
+                /*
+                else if (player.buffType[j] == 159 && inventory[selectedItem].melee) {
+                */
                 else if (player.buffType[j] == 159)
                 {
-                    player.GetArmorPenetration(DamageClass.Melee) += 12f;
+                    /*
+                    armorPenetration += 12;
+                    */
+                    player.GetArmorPenetration(DamageClass.Melee) += 12;
                 }
                 else if (player.buffType[j] == 192)
                 {
@@ -768,6 +773,11 @@ namespace PermaBuffs
                 {
                     int num = 10;
                     player.GetCritChance(DamageClass.Generic) += num;
+                    /*
+                    meleeCrit += num;
+                    rangedCrit += num;
+                    magicCrit += num;
+                    */
                     player.GetDamage(DamageClass.Summon) += (float)num / 100f;
                 }
                 else if (player.buffType[j] == 2)
@@ -812,7 +822,7 @@ namespace PermaBuffs
                 }
                 else if (player.buffType[j] == 11)
                 {
-                    Lighting.AddLight((int)(((Entity)player).position.X + (float)(((Entity)player).width / 2)) / 16, (int)(((Entity)player).position.Y + (float)(((Entity)player).height / 2)) / 16, 0.8f, 0.95f, 1f);
+                    Lighting.AddLight((int)(player.position.X + (float)(player.width / 2)) / 16, (int)(player.position.Y + (float)(player.height / 2)) / 16, 0.8f, 0.95f, 1f);
                 }
                 else if (player.buffType[j] == 12)
                 {
@@ -825,9 +835,7 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 14)
                 {
                     if (player.thorns < 1f)
-                    {
                         player.thorns = 1f;
-                    }
                 }
                 else if (player.buffType[j] == 15)
                 {
@@ -836,6 +844,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 16)
                 {
                     player.archery = true;
+
+                    //TML: Moved from PickAmmo, as StatModifier allows multiplicative buffs to be 'registered' alongside additive ones.
                     player.arrowDamage *= 1.1f;
                 }
                 else if (player.buffType[j] == 17)
@@ -1005,7 +1015,11 @@ namespace PermaBuffs
                 }
                 else if (player.buffType[j] == 115)
                 {
-                    player.GetCritChance(DamageClass.Generic) += 10f;
+                    player.GetCritChance(DamageClass.Generic) += 10;
+                    /*
+                    meleeCrit += 10;
+                    rangedCrit += 10;
+                    */
                 }
                 else if (player.buffType[j] == 116)
                 {
@@ -1015,47 +1029,50 @@ namespace PermaBuffs
                     float num3 = 200f;
                     bool flag = player.infernoCounter % 60 == 0;
                     int damage = 20;
-                    if (((Entity)player).whoAmI == Main.myPlayer)
+                    if (player.whoAmI != Main.myPlayer)
+                        goto UpdateBuffsLoopEnd; //continue;
+
+                    for (int k = 0; k < 200; k++)
                     {
-                        for (int k = 0; k < 200; k++)
+                        NPC nPC = Main.npc[k];
+                        if (nPC.active && !nPC.friendly && nPC.damage > 0 && !nPC.dontTakeDamage && !nPC.buffImmune[num2] && player.CanNPCBeHitByPlayerOrPlayerProjectile(nPC) && Vector2.Distance(((Entity)player).Center, nPC.Center) <= num3)
                         {
-                            NPC nPC = Main.npc[k];
-                            if (nPC.active && !nPC.friendly && nPC.damage > 0 && !nPC.dontTakeDamage && !nPC.buffImmune[num2] && player.CanNPCBeHitByPlayerOrPlayerProjectile(nPC) && Vector2.Distance(((Entity)player).Center, nPC.Center) <= num3)
-                            {
-                                if (nPC.FindBuffIndex(num2) == -1)
-                                {
-                                    nPC.AddBuff(num2, 120);
-                                }
-                                if (flag)
-                                {
-                                    player.ApplyDamageToNPC(nPC, damage, 0f, 0);
-                                }
-                            }
+                            if (nPC.FindBuffIndex(num2) == -1)
+                                nPC.AddBuff(num2, 120);
+
+                            if (flag)
+                                player.ApplyDamageToNPC(nPC, damage, 0f, 0, crit: false);
                         }
-                        if (player.hostile)
+                    }
+
+                    if (!player.hostile)
+                        goto UpdateBuffsLoopEnd; //continue;
+
+                    for (int l = 0; l < 255; l++)
+                    {
+                        Player player2 = Main.player[l];
+                        if (player2 == player || !player2.active || player2.dead || !player2.hostile || player2.buffImmune[num2] || (player2.team == player.team && player2.team != 0) || !(Vector2.Distance(((Entity)player).Center, player2.Center) <= num3))
+                            continue;
+
+                        if (player2.FindBuffIndex(num2) == -1)
+                            player2.AddBuff(num2, 120);
+
+                        if (flag)
                         {
-                            for (int l = 0; l < 255; l++)
-                            {
-                                if (!player.active || player.dead || !player.hostile || player.buffImmune[num2] || (player.team == player.team && player.team != 0) || !(Vector2.Distance(((Entity)player).Center, player.Center) <= num3))
-                                {
-                                    continue;
-                                }
-                                if (player.FindBuffIndex(num2) == -1)
-                                {
-                                    player.AddBuff(num2, 120);
-                                }
-                                if (flag)
-                                {
-                                    PlayerDeathReason reason = PlayerDeathReason.ByOther(16, ((Entity)player).whoAmI);
-                                    player.Hurt(reason, damage, 0, quiet: false, pvp: true);
-                                }
-                            }
+                            PlayerDeathReason reason = PlayerDeathReason.ByOther(16, player.whoAmI);
+                            player2.Hurt(reason, damage, 0, pvp: true, quiet: false);
                         }
                     }
                 }
                 else if (player.buffType[j] == 117)
                 {
                     player.GetDamage(DamageClass.Generic) += 0.1f;
+                    /*
+                    meleeDamage += 0.1f;
+                    rangedDamage += 0.1f;
+                    magicDamage += 0.1f;
+                    minionDamage += 0.1f;
+                    */
                 }
                 else if (player.buffType[j] == 119)
                 {
@@ -1071,20 +1088,14 @@ namespace PermaBuffs
                 }
                 else if (player.buffType[j] == 257)
                 {
-                    if (Main.myPlayer == ((Entity)player).whoAmI)
+                    if (Main.myPlayer == player.whoAmI)
                     {
                         if (player.buffTime[j] > 36000)
-                        {
                             player.luckPotion = 3;
-                        }
                         else if (player.buffTime[j] > 18000)
-                        {
                             player.luckPotion = 2;
-                        }
                         else
-                        {
                             player.luckPotion = 1;
-                        }
                     }
                 }
                 else if (player.buffType[j] == 165)
@@ -1093,9 +1104,7 @@ namespace PermaBuffs
                     player.statDefense += 8;
                     player.dryadWard = true;
                     if (player.thorns < 1f)
-                    {
                         player.thorns += 0.5f;
-                    }
                 }
                 else if (player.buffType[j] == 144)
                 {
@@ -1130,6 +1139,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.beetleOrbs = num4;
                     if (!player.beetleDefense)
                     {
@@ -1165,6 +1175,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.solarShields = num5;
                     if (!player.setSolar)
                     {
@@ -1195,6 +1206,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.beetleOrbs = num6;
                     player.GetDamage(DamageClass.Melee) += 0.1f * (float)player.beetleOrbs;
                     player.GetAttackSpeed(DamageClass.Melee) += 0.1f * (float)player.beetleOrbs;
@@ -1232,6 +1244,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.nebulaLevelMana = num9;
                     if (player.buffTime[j] == 2 && player.nebulaLevelMana > 1)
                     {
@@ -1263,6 +1276,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.nebulaLevelLife = num12;
                     if (player.buffTime[j] == 2 && player.nebulaLevelLife > 1)
                     {
@@ -1270,6 +1284,7 @@ namespace PermaBuffs
                         player.buffType[j]--;
                         player.buffTime[j] = 480;
                     }
+
                     player.lifeRegen += 6 * player.nebulaLevelLife;
                 }
                 else if (player.buffType[j] >= 179 && player.buffType[j] <= 181)
@@ -1295,6 +1310,7 @@ namespace PermaBuffs
                             }
                         }
                     }
+
                     player.nebulaLevelDamage = num15;
                     if (player.buffTime[j] == 2 && player.nebulaLevelDamage > 1)
                     {
@@ -1302,8 +1318,15 @@ namespace PermaBuffs
                         player.buffType[j]--;
                         player.buffTime[j] = 480;
                     }
+
                     float num17 = 0.15f * (float)player.nebulaLevelDamage;
                     player.GetDamage(DamageClass.Generic) += num17;
+                    /*
+                    meleeDamage += num17;
+                    rangedDamage += num17;
+                    magicDamage += num17;
+                    minionDamage += num17;
+                    */
                 }
                 else if (player.buffType[j] == 62)
                 {
@@ -1318,9 +1341,7 @@ namespace PermaBuffs
                             player.iceBarrierFrameCounter = 0;
                             player.iceBarrierFrame++;
                             if (player.iceBarrierFrame >= 12)
-                            {
                                 player.iceBarrierFrame = 0;
-                            }
                         }
                     }
                     else
@@ -1334,10 +1355,9 @@ namespace PermaBuffs
                     for (int num18 = 191; num18 <= 194; num18++)
                     {
                         if (player.ownedProjectileCounts[num18] > 0)
-                        {
                             player.pygmy = true;
-                        }
                     }
+
                     if (!player.pygmy)
                     {
                         player.DelBuff(j);
@@ -1351,9 +1371,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 83)
                 {
                     if (player.ownedProjectileCounts[317] > 0)
-                    {
                         player.raven = true;
-                    }
+
                     if (!player.raven)
                     {
                         player.DelBuff(j);
@@ -1367,9 +1386,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 64)
                 {
                     if (player.ownedProjectileCounts[266] > 0)
-                    {
                         player.slime = true;
-                    }
+
                     if (!player.slime)
                     {
                         player.DelBuff(j);
@@ -1383,9 +1401,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 125)
                 {
                     if (player.ownedProjectileCounts[373] > 0)
-                    {
                         player.hornetMinion = true;
-                    }
+
                     if (!player.hornetMinion)
                     {
                         player.DelBuff(j);
@@ -1399,9 +1416,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 126)
                 {
                     if (player.ownedProjectileCounts[375] > 0)
-                    {
                         player.impMinion = true;
-                    }
+
                     if (!player.impMinion)
                     {
                         player.DelBuff(j);
@@ -1415,9 +1431,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 133)
                 {
                     if (player.ownedProjectileCounts[390] > 0 || player.ownedProjectileCounts[391] > 0 || player.ownedProjectileCounts[392] > 0)
-                    {
                         player.spiderMinion = true;
-                    }
+
                     if (!player.spiderMinion)
                     {
                         player.DelBuff(j);
@@ -1431,9 +1446,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 134)
                 {
                     if (player.ownedProjectileCounts[387] > 0 || player.ownedProjectileCounts[388] > 0)
-                    {
                         player.twinsMinion = true;
-                    }
+
                     if (!player.twinsMinion)
                     {
                         player.DelBuff(j);
@@ -1447,9 +1461,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 135)
                 {
                     if (player.ownedProjectileCounts[393] > 0 || player.ownedProjectileCounts[394] > 0 || player.ownedProjectileCounts[395] > 0)
-                    {
                         player.pirateMinion = true;
-                    }
+
                     if (!player.pirateMinion)
                     {
                         player.DelBuff(j);
@@ -1463,9 +1476,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 214)
                 {
                     if (player.ownedProjectileCounts[758] > 0)
-                    {
                         player.vampireFrog = true;
-                    }
+
                     if (!player.vampireFrog)
                     {
                         player.DelBuff(j);
@@ -1479,9 +1491,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 139)
                 {
                     if (player.ownedProjectileCounts[407] > 0)
-                    {
                         player.sharknadoMinion = true;
-                    }
+
                     if (!player.sharknadoMinion)
                     {
                         player.DelBuff(j);
@@ -1495,9 +1506,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 140)
                 {
                     if (player.ownedProjectileCounts[423] > 0)
-                    {
                         player.UFOMinion = true;
-                    }
+
                     if (!player.UFOMinion)
                     {
                         player.DelBuff(j);
@@ -1511,9 +1521,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 182)
                 {
                     if (player.ownedProjectileCounts[613] > 0)
-                    {
                         player.stardustMinion = true;
-                    }
+
                     if (!player.stardustMinion)
                     {
                         player.DelBuff(j);
@@ -1527,9 +1536,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 213)
                 {
                     if (player.ownedProjectileCounts[755] > 0)
-                    {
                         player.batsOfLight = true;
-                    }
+
                     if (!player.batsOfLight)
                     {
                         player.DelBuff(j);
@@ -1547,7 +1555,7 @@ namespace PermaBuffs
                     {
                         player.babyBird = true;
                     }
-                    else if (((Entity)player).whoAmI == Main.myPlayer)
+                    else if (player.whoAmI == Main.myPlayer)
                     {
                         if (player.numMinions < player.maxMinions)
                         {
@@ -1555,11 +1563,12 @@ namespace PermaBuffs
                             if (num19 != -1)
                             {
                                 Item item = player.inventory[num19];
-                                int num20 = Projectile.NewProjectile(player.GetSource_ItemUse(item), ((Entity)player).Top, Vector2.Zero, item.shoot, item.damage, item.knockBack, ((Entity)player).whoAmI);
+                                int num20 = Projectile.NewProjectile(player.GetSource_ItemUse(item), ((Entity)player).Top, Vector2.Zero, item.shoot, item.damage, item.knockBack, player.whoAmI);
                                 Main.projectile[num20].originalDamage = item.damage;
                                 player.babyBird = true;
                             }
                         }
+
                         if (!player.babyBird)
                         {
                             player.DelBuff(j);
@@ -1567,17 +1576,15 @@ namespace PermaBuffs
                             flag2 = false;
                         }
                     }
+
                     if (flag2)
-                    {
                         player.buffTime[j] = 18000;
-                    }
                 }
                 else if (player.buffType[j] == 325)
                 {
                     if (player.ownedProjectileCounts[951] > 0)
-                    {
                         player.flinxMinion = true;
-                    }
+
                     if (!player.flinxMinion)
                     {
                         player.DelBuff(j);
@@ -1591,9 +1598,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 335)
                 {
                     if (player.ownedProjectileCounts[970] > 0)
-                    {
                         player.abigailMinion = true;
-                    }
+
                     if (!player.abigailMinion)
                     {
                         player.DelBuff(j);
@@ -1603,7 +1609,8 @@ namespace PermaBuffs
                     {
                         player.buffTime[j] = 18000;
                     }
-                    if (((Entity)player).whoAmI == Main.myPlayer)
+
+                    if (player.whoAmI == Main.myPlayer)
                     {
                         int num = 963;
                         if (player.ownedProjectileCounts[970] < 1)
@@ -1611,7 +1618,7 @@ namespace PermaBuffs
                             for (int a = 0; a < 1000; a++)
                             {
                                 Projectile projectile = Main.projectile[a];
-                                if (projectile.active && projectile.owner == ((Entity)player).whoAmI && projectile.type == num)
+                                if (projectile.active && projectile.owner == player.whoAmI && projectile.type == num)
                                 {
                                     projectile.Kill();
                                 }
@@ -1619,16 +1626,15 @@ namespace PermaBuffs
                         }
                         else if (player.ownedProjectileCounts[num] < 1)
                         {
-                            Projectile.NewProjectile(player.GetSource_Misc(ToContextString(14)), ((Entity)player).Center, Vector2.Zero, num, 0, 0f, ((Entity)player).whoAmI);
+                            Projectile.NewProjectile(player.GetSource_Misc(ToContextString(14)), player.Center, Vector2.Zero, num, 0, 0f, player.whoAmI);
                         }
                     }
                 }
                 else if (player.buffType[j] == 263)
                 {
                     if (player.ownedProjectileCounts[831] > 0)
-                    {
                         player.stormTiger = true;
-                    }
+
                     if (!player.stormTiger)
                     {
                         player.DelBuff(j);
@@ -1638,10 +1644,10 @@ namespace PermaBuffs
                     {
                         player.buffTime[j] = 18000;
                     }
-                    if (((Entity)player).whoAmI == Main.myPlayer)
+
+                    if (player.whoAmI == Main.myPlayer)
                     {
                         int result = 0;
-
                         {
                             int num41 = player.ownedProjectileCounts[831];
                             if (num41 > 0)
@@ -1700,9 +1706,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 271)
                 {
                     if (player.ownedProjectileCounts[864] > 0)
-                    {
                         player.smolstar = true;
-                    }
+
                     if (!player.smolstar)
                     {
                         player.DelBuff(j);
@@ -1718,7 +1723,7 @@ namespace PermaBuffs
                     if (player.ownedProjectileCounts[946] > 0)
                     {
                         player.empressBlade = true;
-                    }
+
                     if (!player.empressBlade)
                     {
                         player.DelBuff(j);
@@ -1732,9 +1737,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 187)
                 {
                     if (player.ownedProjectileCounts[623] > 0)
-                    {
                         player.stardustGuardian = true;
-                    }
+
                     if (!player.stardustGuardian)
                     {
                         player.DelBuff(j);
@@ -1748,9 +1752,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 188)
                 {
                     if (player.ownedProjectileCounts[625] > 0)
-                    {
                         player.stardustDragon = true;
-                    }
+
                     if (!player.stardustDragon)
                     {
                         player.DelBuff(j);
@@ -1764,9 +1767,8 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 161)
                 {
                     if (player.ownedProjectileCounts[533] > 0)
-                    {
                         player.DeadlySphereMinion = true;
-                    }
+
                     if (!player.DeadlySphereMinion)
                     {
                         player.DelBuff(j);
@@ -1953,13 +1955,10 @@ namespace PermaBuffs
                     player.lightOrb = true;
                     bool flag3 = true;
                     if (player.ownedProjectileCounts[18] > 0)
-                    {
                         flag3 = false;
-                    }
-                    if (flag3 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 18, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag3 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 18, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 155)
                 {
@@ -1967,13 +1966,10 @@ namespace PermaBuffs
                     player.crimsonHeart = true;
                     bool flag4 = true;
                     if (player.ownedProjectileCounts[500] > 0)
-                    {
                         flag4 = false;
-                    }
-                    if (flag4 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 500, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag4 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 500, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 191)
                 {
@@ -2182,13 +2178,10 @@ namespace PermaBuffs
                     player.suspiciouslookingTentacle = true;
                     bool flag5 = true;
                     if (player.ownedProjectileCounts[650] > 0)
-                    {
                         flag5 = false;
-                    }
-                    if (flag5 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 650, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag5 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 650, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 27 || player.buffType[j] == 101 || player.buffType[j] == 102)
                 {
@@ -2196,31 +2189,28 @@ namespace PermaBuffs
                     bool flag6 = true;
                     int num21 = 72;
                     if (player.buffType[j] == 27)
-                    {
                         player.blueFairy = true;
-                    }
+
                     if (player.buffType[j] == 101)
                     {
                         num21 = 86;
                         player.redFairy = true;
                     }
+
                     if (player.buffType[j] == 102)
                     {
                         num21 = 87;
                         player.greenFairy = true;
                     }
+
                     if (player.head == 45 && player.body == 26 && player.legs == 25)
-                    {
                         num21 = 72;
-                    }
+
                     if (player.ownedProjectileCounts[num21] > 0)
-                    {
                         flag6 = false;
-                    }
-                    if (flag6 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, num21, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag6 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, num21, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 40)
                 {
@@ -2228,18 +2218,15 @@ namespace PermaBuffs
                     player.bunny = true;
                     bool flag7 = true;
                     if (player.ownedProjectileCounts[111] > 0)
-                    {
                         flag7 = false;
-                    }
-                    if (flag7 && ((Entity)player).whoAmI == Main.myPlayer)
                     {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 111, 0, 0f, ((Entity)player).whoAmI);
                     }
+
                 }
                 else if (player.buffType[j] == 148)
                 {
                     player.rabid = true;
-                    if (Main.rand.Next(1200) == 0)
+                    if (Main.rand.NextBool(1200))
                     {
                         int num22 = Main.rand.Next(6);
                         float num23 = (float)Main.rand.Next(60, 100) * 0.01f;
@@ -2266,6 +2253,10 @@ namespace PermaBuffs
                         }
                     }
                     player.GetDamage(DamageClass.Generic) += 0.2f;
+                    magicDamage += 0.2f;
+                    rangedDamage += 0.2f;
+                    minionDamage += 0.2f;
+                    */
                 }
                 else if (player.buffType[j] == 41)
                 {
@@ -2273,22 +2264,17 @@ namespace PermaBuffs
                     player.penguin = true;
                     bool flag8 = true;
                     if (player.ownedProjectileCounts[112] > 0)
-                    {
                         flag8 = false;
-                    }
-                    if (flag8 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 112, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag8 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 112, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 152)
                 {
                     player.buffTime[j] = 18000;
                     player.magicLantern = true;
-                    if (player.ownedProjectileCounts[492] == 0 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 492, 0, 0f, ((Entity)player).whoAmI);
-                    }
+                    if (player.ownedProjectileCounts[492] == 0 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 492, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 91)
                 {
@@ -2296,13 +2282,10 @@ namespace PermaBuffs
                     player.puppy = true;
                     bool flag9 = true;
                     if (player.ownedProjectileCounts[334] > 0)
-                    {
                         flag9 = false;
-                    }
-                    if (flag9 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 334, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag9 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 334, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 92)
                 {
@@ -2310,13 +2293,10 @@ namespace PermaBuffs
                     player.grinch = true;
                     bool flag10 = true;
                     if (player.ownedProjectileCounts[353] > 0)
-                    {
                         flag10 = false;
-                    }
-                    if (flag10 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 353, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag10 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 353, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 84)
                 {
@@ -2324,13 +2304,10 @@ namespace PermaBuffs
                     player.blackCat = true;
                     bool flag11 = true;
                     if (player.ownedProjectileCounts[319] > 0)
-                    {
                         flag11 = false;
-                    }
-                    if (flag11 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 319, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag11 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 319, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 61)
                 {
@@ -2338,13 +2315,10 @@ namespace PermaBuffs
                     player.dino = true;
                     bool flag12 = true;
                     if (player.ownedProjectileCounts[236] > 0)
-                    {
                         flag12 = false;
-                    }
-                    if (flag12 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 236, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag12 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 236, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 154)
                 {
@@ -2352,13 +2326,10 @@ namespace PermaBuffs
                     player.babyFaceMonster = true;
                     bool flag13 = true;
                     if (player.ownedProjectileCounts[499] > 0)
-                    {
                         flag13 = false;
-                    }
-                    if (flag13 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 499, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag13 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 499, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 65)
                 {
@@ -2366,13 +2337,10 @@ namespace PermaBuffs
                     player.eyeSpring = true;
                     bool flag14 = true;
                     if (player.ownedProjectileCounts[268] > 0)
-                    {
                         flag14 = false;
-                    }
-                    if (flag14 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 268, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag14 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 268, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 66)
                 {
@@ -2380,13 +2348,10 @@ namespace PermaBuffs
                     player.snowman = true;
                     bool flag15 = true;
                     if (player.ownedProjectileCounts[269] > 0)
-                    {
                         flag15 = false;
-                    }
-                    if (flag15 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 269, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag15 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 269, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 42)
                 {
@@ -2394,13 +2359,10 @@ namespace PermaBuffs
                     player.turtle = true;
                     bool flag16 = true;
                     if (player.ownedProjectileCounts[127] > 0)
-                    {
                         flag16 = false;
-                    }
-                    if (flag16 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 127, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag16 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 127, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 45)
                 {
@@ -2408,13 +2370,10 @@ namespace PermaBuffs
                     player.eater = true;
                     bool flag17 = true;
                     if (player.ownedProjectileCounts[175] > 0)
-                    {
                         flag17 = false;
-                    }
-                    if (flag17 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 175, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag17 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 175, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 50)
                 {
@@ -2422,13 +2381,10 @@ namespace PermaBuffs
                     player.skeletron = true;
                     bool flag18 = true;
                     if (player.ownedProjectileCounts[197] > 0)
-                    {
                         flag18 = false;
-                    }
-                    if (flag18 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 197, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag18 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 197, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 51)
                 {
@@ -2436,13 +2392,10 @@ namespace PermaBuffs
                     player.hornet = true;
                     bool flag19 = true;
                     if (player.ownedProjectileCounts[198] > 0)
-                    {
                         flag19 = false;
-                    }
-                    if (flag19 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 198, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag19 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 198, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 52)
                 {
@@ -2450,13 +2403,10 @@ namespace PermaBuffs
                     player.tiki = true;
                     bool flag20 = true;
                     if (player.ownedProjectileCounts[199] > 0)
-                    {
                         flag20 = false;
-                    }
-                    if (flag20 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 199, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag20 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 199, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 53)
                 {
@@ -2464,13 +2414,10 @@ namespace PermaBuffs
                     player.lizard = true;
                     bool flag21 = true;
                     if (player.ownedProjectileCounts[200] > 0)
-                    {
                         flag21 = false;
-                    }
-                    if (flag21 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 200, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag21 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 200, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 54)
                 {
@@ -2478,13 +2425,10 @@ namespace PermaBuffs
                     player.parrot = true;
                     bool flag22 = true;
                     if (player.ownedProjectileCounts[208] > 0)
-                    {
                         flag22 = false;
-                    }
-                    if (flag22 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 208, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag22 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 208, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 55)
                 {
@@ -2492,13 +2436,10 @@ namespace PermaBuffs
                     player.truffle = true;
                     bool flag23 = true;
                     if (player.ownedProjectileCounts[209] > 0)
-                    {
                         flag23 = false;
-                    }
-                    if (flag23 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 209, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag23 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 209, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 56)
                 {
@@ -2506,13 +2447,10 @@ namespace PermaBuffs
                     player.sapling = true;
                     bool flag24 = true;
                     if (player.ownedProjectileCounts[210] > 0)
-                    {
                         flag24 = false;
-                    }
-                    if (flag24 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 210, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag24 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 210, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 85)
                 {
@@ -2520,13 +2458,10 @@ namespace PermaBuffs
                     player.cSapling = true;
                     bool flag25 = true;
                     if (player.ownedProjectileCounts[324] > 0)
-                    {
                         flag25 = false;
-                    }
-                    if (flag25 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 324, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag25 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 324, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 81)
                 {
@@ -2534,13 +2469,10 @@ namespace PermaBuffs
                     player.spider = true;
                     bool flag26 = true;
                     if (player.ownedProjectileCounts[313] > 0)
-                    {
                         flag26 = false;
-                    }
-                    if (flag26 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 313, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag26 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 313, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 82)
                 {
@@ -2548,13 +2480,10 @@ namespace PermaBuffs
                     player.squashling = true;
                     bool flag27 = true;
                     if (player.ownedProjectileCounts[314] > 0)
-                    {
                         flag27 = false;
-                    }
-                    if (flag27 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 314, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag27 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 314, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 57)
                 {
@@ -2562,13 +2491,10 @@ namespace PermaBuffs
                     player.wisp = true;
                     bool flag28 = true;
                     if (player.ownedProjectileCounts[211] > 0)
-                    {
                         flag28 = false;
-                    }
-                    if (flag28 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 211, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag28 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 211, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 60)
                 {
@@ -2577,19 +2503,17 @@ namespace PermaBuffs
                     bool flag29 = true;
                     for (int num24 = 0; num24 < 1000; num24++)
                     {
-                        if (Main.projectile[num24].active && Main.projectile[num24].owner == ((Entity)player).whoAmI && Main.projectile[num24].type == 226)
+                        if (Main.projectile[num24].active && Main.projectile[num24].owner == player.whoAmI && Main.projectile[num24].type == 226)
                         {
                             if (!flag29)
-                            {
                                 Main.projectile[num24].Kill();
-                            }
+
                             flag29 = false;
                         }
                     }
-                    if (flag29 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 226, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag29 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 226, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 127)
                 {
@@ -2597,13 +2521,10 @@ namespace PermaBuffs
                     player.zephyrfish = true;
                     bool flag30 = true;
                     if (player.ownedProjectileCounts[380] > 0)
-                    {
                         flag30 = false;
-                    }
-                    if (flag30 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 380, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag30 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 380, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 136)
                 {
@@ -2611,13 +2532,10 @@ namespace PermaBuffs
                     player.miniMinotaur = true;
                     bool flag31 = true;
                     if (player.ownedProjectileCounts[398] > 0)
-                    {
                         flag31 = false;
-                    }
-                    if (flag31 && ((Entity)player).whoAmI == Main.myPlayer)
-                    {
-                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), ((Entity)player).position.X + (float)(((Entity)player).width / 2), ((Entity)player).position.Y + (float)(((Entity)player).height / 2), 0f, 0f, 398, 0, 0f, ((Entity)player).whoAmI);
-                    }
+
+                    if (flag31 && player.whoAmI == Main.myPlayer)
+                        Projectile.NewProjectile(new EntitySource_Buff(player, player.buffType[j], j), player.position.X + (float)(player.width / 2), player.position.Y + (float)(player.height / 2), 0f, 0f, 398, 0, 0f, player.whoAmI);
                 }
                 else if (player.buffType[j] == 70)
                 {
@@ -2688,44 +2606,42 @@ namespace PermaBuffs
                 {
                     player.shimmering = true;
                     player.frozen = true;
-                    player.fallStart = (int)(((Entity)player).position.Y / 16f);
-                    if (Main.myPlayer == ((Entity)player).whoAmI)
+                    player.fallStart = (int)(player.position.Y / 16f);
+                    if (Main.myPlayer != player.whoAmI)
+                        goto UpdateBuffsLoopEnd; //continue;
+
+                    if (player.position.Y / 16f > (float)Main.UnderworldLayer)
                     {
-                        if (((Entity)player).position.Y / 16f > (float)Main.UnderworldLayer)
+                        if (Main.myPlayer == player.whoAmI)
                         {
-                            if (Main.myPlayer == ((Entity)player).whoAmI)
-                            {
-                                player.DelBuff(j);
-                                j--;
-                            }
+                            player.DelBuff(j);
+                            j--;
                         }
-                        else if (((Entity)player).shimmerWet)
+                        goto UpdateBuffsLoopEnd; //continue;
+                    }
+
+                    if (player.shimmerWet)
+                    {
+                        player.buffTime[j] = 60;
+                        goto UpdateBuffsLoopEnd; //continue;
+                    }
+
+                    bool flag32 = false;
+                    for (int num25 = (int)(player.position.X / 16f); (float)num25 <= (player.position.X + (float)player.width) / 16f; num25++)
+                    {
+                        for (int num26 = (int)(player.position.Y / 16f); (float)num26 <= (player.position.Y + (float)player.height) / 16f; num26++)
                         {
-                            player.buffTime[j] = 60;
+                            if (WorldGen.SolidTile3(num25, num26))
+                                flag32 = true;
                         }
-                        else
-                        {
-                            bool flag32 = false;
-                            for (int num25 = (int)(((Entity)player).position.X / 16f); (float)num25 <= (((Entity)player).position.X + (float)((Entity)player).width) / 16f; num25++)
-                            {
-                                for (int num26 = (int)(((Entity)player).position.Y / 16f); (float)num26 <= (((Entity)player).position.Y + (float)((Entity)player).height) / 16f; num26++)
-                                {
-                                    if (WorldGen.SolidTile3(num25, num26))
-                                    {
-                                        flag32 = true;
-                                    }
-                                }
-                            }
-                            if (flag32)
-                            {
-                                player.buffTime[j] = 6;
-                            }
-                            else
-                            {
-                                player.DelBuff(j);
-                                j--;
-                            }
-                        }
+                    }
+
+                    if (flag32)
+                        player.buffTime[j] = 6;
+                    else
+                    {
+                        player.DelBuff(j);
+                        j--;
                     }
                 }
                 else if (player.buffType[j] == 163)
@@ -2768,14 +2684,11 @@ namespace PermaBuffs
                 else if (player.buffType[j] == 149)
                 {
                     player.webbed = true;
-                    if (((Entity)player).velocity.Y != 0f)
-                    {
-                        ((Entity)player).velocity = new Vector2(0f, 1E-06f);
-                    }
+                    if (player.velocity.Y != 0f)
+                        player.velocity = new Vector2(0f, 1E-06f);
                     else
-                    {
-                        ((Entity)player).velocity = Vector2.Zero;
-                    }
+                        player.velocity = Vector2.Zero;
+
                     Player.jumpHeight = 0;
                     player.gravity = 0f;
                     player.moveSpeed = 0f;
@@ -2790,7 +2703,7 @@ namespace PermaBuffs
                 }
                 else if (player.buffType[j] == 29)
                 {
-                    player.GetCritChance(DamageClass.Magic) += 2f;
+                    player.GetCritChance(DamageClass.Magic) += 2;
                     player.GetDamage(DamageClass.Magic) += 0.05f;
                     player.statManaMax2 += 20;
                     player.manaCost -= 0.02f;
@@ -2801,7 +2714,7 @@ namespace PermaBuffs
                     {
                         player.lifeRegen++;
                         player.wereWolf = true;
-                        player.GetCritChance(DamageClass.Melee) += 2f;
+                        player.GetCritChance(DamageClass.Melee) += 2;
                         player.GetDamage(DamageClass.Melee) += 0.051f;
                         player.GetAttackSpeed(DamageClass.Melee) += 0.051f;
                         player.statDefense += 3;
@@ -2824,7 +2737,7 @@ namespace PermaBuffs
                 {
                     player.tipsy = true;
                     player.statDefense -= 4;
-                    player.GetCritChance(DamageClass.Melee) += 2f;
+                    player.GetCritChance(DamageClass.Melee) += 2;
                     player.GetDamage(DamageClass.Melee) += 0.1f;
                     player.GetAttackSpeed(DamageClass.Melee) += 0.1f;
                 }
@@ -2832,10 +2745,21 @@ namespace PermaBuffs
                 {
                     player.wellFed = true;
                     player.statDefense += 2;
-                    player.GetCritChance(DamageClass.Generic) += 2f;
+                    player.GetCritChance(DamageClass.Generic) += 2;
                     player.GetDamage(DamageClass.Generic) += 0.05f;
+                    /*
+                    meleeCrit += 2;
+                    meleeDamage += 0.05f;
+                    */
                     player.GetAttackSpeed(DamageClass.Melee) += 0.05f;
-                    player.GetKnockback(DamageClass.Summon).Base += 0.5f;
+                    /*
+                    magicCrit += 2;
+                    magicDamage += 0.05f;
+                    rangedCrit += 2;
+                    rangedDamage += 0.05f;
+                    minionDamage += 0.05f;
+                    */
+                    player.GetKnockback(DamageClass.Summon) += 0.5f;
                     player.moveSpeed += 0.2f;
                     player.pickSpeed -= 0.05f;
                 }
@@ -2843,10 +2767,21 @@ namespace PermaBuffs
                 {
                     player.wellFed = true;
                     player.statDefense += 3;
-                    player.GetCritChance(DamageClass.Generic) += 3f;
+                    player.GetCritChance(DamageClass.Generic) += 3;
                     player.GetDamage(DamageClass.Generic) += 0.075f;
+                    /*
+                    meleeCrit += 3;
+                    meleeDamage += 0.075f;
+                    */
                     player.GetAttackSpeed(DamageClass.Melee) += 0.075f;
-                    player.GetKnockback(DamageClass.Summon).Base += 0.75f;
+                    /*
+                    magicCrit += 3;
+                    magicDamage += 0.075f;
+                    rangedCrit += 3;
+                    rangedDamage += 0.075f;
+                    minionDamage += 0.075f;
+                    */
+                    player.GetKnockback(DamageClass.Summon) += 0.75f;
                     player.moveSpeed += 0.3f;
                     player.pickSpeed -= 0.1f;
                 }
@@ -2854,10 +2789,21 @@ namespace PermaBuffs
                 {
                     player.wellFed = true;
                     player.statDefense += 4;
-                    player.GetCritChance(DamageClass.Generic) += 4f;
+                    player.GetCritChance(DamageClass.Generic) += 4;
                     player.GetDamage(DamageClass.Generic) += 0.1f;
+                    /*
+                    meleeCrit += 4;
+                    meleeDamage += 0.1f;
+                    */
                     player.GetAttackSpeed(DamageClass.Melee) += 0.1f;
-                    player.GetKnockback(DamageClass.Summon).Base += 1f;
+                    /*
+                    magicCrit += 4;
+                    magicDamage += 0.1f;
+                    rangedCrit += 4;
+                    rangedDamage += 0.1f;
+                    minionDamage += 0.1f;
+                    */
+                    player.GetKnockback(DamageClass.Summon) += 1f;
                     player.moveSpeed += 0.4f;
                     player.pickSpeed -= 0.15f;
                 }
@@ -2865,20 +2811,42 @@ namespace PermaBuffs
                 {
                     player.hungry = true;
                     player.statDefense -= 2;
-                    player.GetCritChance(DamageClass.Generic) -= 2f;
+                    player.GetCritChance(DamageClass.Generic) -= 2;
                     player.GetDamage(DamageClass.Generic) -= 0.05f;
+                    /*
+                    meleeCrit -= 2;
+                    meleeDamage -= 0.05f;
+                    */
                     player.GetAttackSpeed(DamageClass.Melee) -= 0.05f;
-                    player.GetKnockback(DamageClass.Summon).Base -= 0.5f;
+                    /*
+                    magicCrit -= 2;
+                    magicDamage -= 0.05f;
+                    rangedCrit -= 2;
+                    rangedDamage -= 0.05f;
+                    minionDamage -= 0.05f;
+                    */
+                    player.GetKnockback(DamageClass.Summon) -= 0.5f;
                     player.pickSpeed += 0.05f;
                 }
                 else if (player.buffType[j] == 334)
                 {
                     player.starving = true;
                     player.statDefense -= 4;
-                    player.GetCritChance(DamageClass.Generic) -= 4f;
+                    player.GetCritChance(DamageClass.Generic) -= 4;
                     player.GetDamage(DamageClass.Generic) -= 0.1f;
+                    /*
+                    meleeCrit -= 4;
+                    meleeDamage -= 0.1f;
+                    */
                     player.GetAttackSpeed(DamageClass.Melee) -= 0.1f;
-                    player.GetKnockback(DamageClass.Summon).Base -= 1f;
+                    /*
+                    magicCrit -= 4;
+                    magicDamage -= 0.1f;
+                    rangedCrit -= 4;
+                    rangedDamage -= 0.1f;
+                    minionDamage -= 0.1f;
+                    */
+                    player.GetKnockback(DamageClass.Summon) -= 1f;
                     player.pickSpeed += 0.15f;
                 }
                 else if (player.buffType[j] == 336)
@@ -2917,13 +2885,14 @@ namespace PermaBuffs
                 {
                     player.meleeEnchant = 8;
                 }
+
+            UpdateBuffsLoopEnd:
                 if (j == originalIndex)
-                {
                     BuffLoader.Update(player.buffType[j], player, ref j);
-                }
             }
+
             player.UpdateHungerBuffs();
-            if (((Entity)player).whoAmI == Main.myPlayer && player.luckPotion != player.oldLuckPotion)
+            if (player.whoAmI == Main.myPlayer && player.luckPotion != player.oldLuckPotion)
             {
                 player.luckNeedsSync = true;
                 player.oldLuckPotion = player.luckPotion;
@@ -3097,6 +3066,15 @@ namespace PermaBuffs
                    "Therefore only Vanilla NPCs are loaded. This issue is caused by adding or removing mods that contain a ModNPC between saves.", Color.Red);
             }
         }
+
+        public bool IsSummonBuff(int buffType)
+        {
+            bool isSummon = false;
+
+            
+
+            return isSummon;
+        }
         /// <summary>
         /// Adds the buffs previously saved to a queue that is applied when the player first spawns.
         /// </summary>
@@ -3108,6 +3086,9 @@ namespace PermaBuffs
             IList<string> neverList = tag.GetList<string>("NeverList");
             IList<string> bannerList = tag.GetList<string>("BannerList");
             int buffType;
+
+            if (PermaBuffsConfig.instance.doNotApplyBuffsAfterDeathOrLoad)
+                return;
 
             try
             {
@@ -3152,6 +3133,7 @@ namespace PermaBuffs
                 // Don't add the buff if it is invalid
                 if (buffCountDifferent && buffType >= BuffID.Count)
                     continue;
+
 
                 alwaysPermanent[buffType] = true;
             }

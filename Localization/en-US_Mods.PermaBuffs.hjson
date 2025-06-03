@@ -21,6 +21,16 @@ Configs: {
 			Tooltip: When set to true, keybind tooltips are hidden after they're shown for the first time. This has no effect if you have not bound said keybind in the controls.
 			Label: Auto Hide Keybind Tooltips
 		}
+
+		doNotApplyBuffsAfterDeathOrLoad: {
+			Tooltip:
+				'''
+				When set to true, no permabuffs or neverbuffs will persist after death. 
+				This is needed in the case that the game freezes on adding certain buffs using AddBuff, so the user does not get stuck in a freeze loop.
+				Also nice if you only want the duration increase.
+				'''
+			Label: do Not Apply Buffs After Death Or Load
+		}
 	}
 }
 
