@@ -3041,6 +3041,9 @@ namespace PermaBuffs
 
         public override void PreUpdateBuffs()
         {
+            if (Main.netMode == NetmodeID.Server)
+                return;
+
             Player player = Main.LocalPlayer;
 
             // Golden queue manager. 
@@ -3081,6 +3084,9 @@ namespace PermaBuffs
         /// </summary>
         public override void PostUpdateBuffs()
         {
+            if (Main.netMode == NetmodeID.Server)
+                return;
+
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             Player player = Main.LocalPlayer;
             bool bannersSet = false;
@@ -3118,7 +3124,7 @@ namespace PermaBuffs
         }
 
         /// <summary>
-        /// Re-applies buffs that the player had before they saved and quit
+        /// Re-applies buffs that the player had before they saved and quit. This is called on local client only
         /// </summary>
         public override void OnEnterWorld()
         {
@@ -3216,7 +3222,6 @@ namespace PermaBuffs
                 // Don't add the buff if it is invalid
                 if (buffCountDifferent && buffType >= BuffID.Count)
                     continue;
-
 
                 alwaysPermanent[buffType] = true;
             }
@@ -3321,6 +3326,9 @@ namespace PermaBuffs
         /// <returns></returns>
         public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust, ref PlayerDeathReason damageSource)
         {
+            if (Main.netMode == NetmodeID.Server)
+                return true;
+
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             Player player = Main.LocalPlayer;
 
