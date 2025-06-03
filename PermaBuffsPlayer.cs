@@ -88,6 +88,48 @@ namespace PermaBuffs
                     return type > 0 && timeLeft > 0;
                 }
             }
+            public bool isMount
+            {
+                get
+                {
+                    bool mount = false;
+
+                    switch (type)
+                    {
+                        case BuffID.BunnyMount:
+                        case BuffID.PigronMount:
+                        case BuffID.SlimeMount:
+                        case BuffID.TurtleMount:
+                        case BuffID.BeeMount:
+                        case BuffID.UFOMount:
+                        case BuffID.DrillMount:
+                        case BuffID.ScutlixMount:
+                        case BuffID.UnicornMount:
+                        case BuffID.CuteFishronMount:
+                        case BuffID.BasiliskMount:
+                        case BuffID.GolfCartMount:
+                        case BuffID.PaintedHorseMount:
+                        case BuffID.MajesticHorseMount:
+                        case BuffID.DarkHorseMount:
+                        case BuffID.PogoStickMount:
+                        case BuffID.PirateShipMount:
+                        case BuffID.SpookyWoodMount:
+                        case BuffID.SantankMount:
+                        case BuffID.WallOfFleshGoatMount:
+                        case BuffID.DarkMageBookMount:
+                        case BuffID.LavaSharkMount:
+                        case BuffID.QueenSlimeMount:
+                        case BuffID.WolfMount:
+                        case BuffID.WitchBroom:
+                        case BuffID.Flamingo:
+                        case BuffID.Rudolph:
+                            mount = true;
+                            break;
+                    }
+
+                    return mount;
+                }
+            }
             /// <summary>
             /// Returns if the buff spawns a pet
             /// </summary>
@@ -96,6 +138,50 @@ namespace PermaBuffs
                 get
                 {
                     return Main.vanityPet[type] || Main.lightPet[type];
+                }
+            }
+
+            public bool isSummon
+            {
+                get
+                {
+                    bool summon = false;
+
+                    switch (type)
+                    {
+                        case BuffID.AbigailMinion:
+                        case BuffID.BabySlime:
+                        case BuffID.BabyBird:
+                        case BuffID.HornetMinion:
+                        case BuffID.ImpMinion:
+                        case BuffID.SpiderMinion:
+                        case BuffID.TwinEyesMinion:
+                        case BuffID.PirateMinion:
+                        case BuffID.Pygmies:
+                        case BuffID.UFOMinion:
+                        case BuffID.Ravens:
+                        case BuffID.SharknadoMinion:
+                        case BuffID.EmpressBlade:
+                        case BuffID.DeadlySphere:
+                        case BuffID.StardustDragonMinion:
+                        case BuffID.StardustGuardianMinion:
+                        case BuffID.StardustMinion:
+                        case BuffID.Smolstar:
+                        case BuffID.FlinxMinion:
+                        case BuffID.BatOfLight:
+                        case BuffID.VampireFrog:
+                            summon = true;
+                            break;
+                    }
+
+                    return summon;
+                }
+            }
+            public bool canAddBuffToPlayer
+            {
+                get
+                {
+                    return isActive && !isPet && !isMount && !isSummon;
                 }
             }
             /// <summary>
@@ -674,7 +760,6 @@ namespace PermaBuffs
                 orig(player, bannerID, ref modifiers);
             }
         }
-
         internal static string? ToContextString(int ID)
         {
             return ID switch
@@ -2978,11 +3063,15 @@ namespace PermaBuffs
                 // i in this case is the buffType, since alwaysPermanent is indexed by buffType
                 int buffIndex = player.FindBuffIndex(i);
 
-                // if the buff was not found
+                // if the buff was not found and we can re-add the buff
                 if (buffIndex == -1)
                 {
                     // Re-add it
-                    player.AddBuff(i, TimeForGolden, false);
+                    BuffInfo buff = new BuffInfo(player.buffType[buffIndex], player.buffTime[buffIndex]);
+
+                    if (buff.canAddBuffToPlayer)
+                        // Re-add it
+                        player.AddBuff(i, TimeForGolden, false);
                 }
             }
         }
@@ -3040,7 +3129,7 @@ namespace PermaBuffs
             {
                 BuffInfo buff = pendingBuffs[i];
                 // Re-apply buffs between sessions if set to persist through death
-                if (buff.shouldPersistThroughDeath)
+                if (buff.shouldPersistThroughDeath && buff.canAddBuffToPlayer)
                 {
                     player.AddBuff(buff.type, buff.timeLeft, false);
                     goldenQueue[buff.type] = true;
@@ -3068,15 +3157,6 @@ namespace PermaBuffs
                 Main.NewText("The number of ModNPCs currently loaded are different from when they were previously saved. This means the non-vanilla npcID's previously saved are no longer valid.\n" +
                    "Therefore only Vanilla NPCs are loaded. This issue is caused by adding or removing mods that contain a ModNPC between saves.", Color.Red);
             }
-        }
-
-        public bool IsSummonBuff(int buffType)
-        {
-            bool isSummon = false;
-
-            
-
-            return isSummon;
         }
         /// <summary>
         /// Adds the buffs previously saved to a queue that is applied when the player first spawns.
@@ -3269,9 +3349,12 @@ namespace PermaBuffs
                     continue;
                 }
 
-                player.AddBuff(buff.type, buff.timeLeft, false);
-                drawQueue[buff.type] = true;
-                goldenQueue[buff.type] = true;
+                if (buff.canAddBuffToPlayer)
+                {
+                    player.AddBuff(buff.type, buff.timeLeft, false);
+                    drawQueue[buff.type] = true;
+                    goldenQueue[buff.type] = true;
+                }
             }
 
             goldenTicks = 0;

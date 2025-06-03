@@ -25,11 +25,11 @@ Configs: {
 		doNotApplyBuffsAfterDeathOrLoad: {
 			Tooltip:
 				'''
-				When set to true, no permabuffs or neverbuffs will persist after death. 
-				This is needed in the case that the game freezes on adding certain buffs using AddBuff, so the user does not get stuck in a freeze loop.
+				In the case a buff that spawns another npc is PermaBuffed and the player dies or saves and exits - if it is a Modbuff there is a high chance the game will freeze.
+				This is helpful for that case. By toggling this on, you disable any buffs from being loaded upon death or spawn. This prevents any associated freeze from this mod.
 				Also nice if you only want the duration increase.
 				'''
-			Label: do Not Apply Buffs After Death Or Load
+			Label: Do Not Apply Buffs After Death Or Load
 		}
 	}
 }
