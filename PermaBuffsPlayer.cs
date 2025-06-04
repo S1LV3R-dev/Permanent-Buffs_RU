@@ -298,6 +298,7 @@ namespace PermaBuffs
         public bool buffCountDifferent = false;
         public bool npcCountDifferent = false;
         public bool bannersNeedRefresh = false;
+        public bool initialized = false;
         public static ModKeybind alwaysPermanentKey;
         public static ModKeybind neverPermanentKey;
 
@@ -308,9 +309,10 @@ namespace PermaBuffs
             alwaysPermanent = new bool[BuffLoader.BuffCount];
             neverPermanent = new bool[BuffLoader.BuffCount];
             activeBanners = new bool[NPCLoader.NPCCount];
+            initialized = true;
         }
 
-        public void CheckToggleKeys(int buffType, int buffSlot)
+        public void CheckToggleKeys(BuffInfo buff, int buffSlot)
         {
             if (!(alwaysPermanentKeyPressed || neverPermanentKeyPressed))
             {
@@ -319,28 +321,29 @@ namespace PermaBuffs
 
             if (alwaysPermanentKeyPressed) 
             {
-                alwaysPermanent[buffType] = !alwaysPermanent[buffType];
-                neverPermanent[buffType] = false;
+                alwaysPermanent[buff.type] = !alwaysPermanent[buff.type];
+                neverPermanent[buff.type] = false;
 
-                if (!alwaysPermanent[buffType])
+                if (!alwaysPermanent[buff.type])
                 {
                     Player player = Main.LocalPlayer;
-                    player.buffTime[buffSlot] = Math.Max(player.buffTime[buffSlot], TimeForGolden);
+
+                    player.buffTime[buffSlot] = Math.Max(buff.timeLeft, TimeForGolden);
                 }
 
                 SoundEngine.PlaySound(SoundID.MenuTick);
             }
             else if (neverPermanentKeyPressed)
             {
-                neverPermanent[buffType] = !neverPermanent[buffType];
-                alwaysPermanent[buffType] = false;
+                neverPermanent[buff.type] = !neverPermanent[buff.type];
+                alwaysPermanent[buff.type] = false;
 
                 SoundEngine.PlaySound(SoundID.MenuTick);
             }
 
             alwaysPermanentKeyPressed = false;
             neverPermanentKeyPressed = false;
-            goldenQueue[buffType] = false;
+            goldenQueue[buff.type] = false;
         }
 
         #region Hooks
@@ -461,7 +464,7 @@ namespace PermaBuffs
             BuffLoader.PostDraw(Main.spriteBatch, buffType, buffSlotOnPlayer, drawParams);
 
             // Only show the time if no golden border was drawn
-            if (Main.TryGetBuffTime(buffSlotOnPlayer, out var buffTimeValue) && buffTimeValue > 2 && (!shouldDrawBorder || modPlayer.neverPermanent[buffType]))
+            if (Main.TryGetBuffTime(buffSlotOnPlayer, out var buffTimeValue) && buffTimeValue > 2 && (!shouldDrawBorder || modPlayer.neverPermanent[buffType]) && player.buffType[buffSlotOnPlayer] != BuffID.MonsterBanner)
             {
                 string text = Lang.LocalizedDuration(new TimeSpan(0, 0, buffTimeValue / 60), abbreviated: true, showAllAvailableUnits: false); 
                 Main.spriteBatch.DrawString(FontAssets.ItemStack.Value, text, textPosition, color, 0f, default(Vector2), 0.8f, SpriteEffects.None, 0f);
@@ -469,7 +472,8 @@ namespace PermaBuffs
            
             if (mouseRectangle.Contains(new Point(Main.mouseX, Main.mouseY)))
             {
-                modPlayer.CheckToggleKeys(buffType, buffSlotOnPlayer);
+                BuffInfo buff = new BuffInfo(player.buffType[buffSlotOnPlayer], player.buffTime[buffSlotOnPlayer]);
+                modPlayer.CheckToggleKeys(buff, buffSlotOnPlayer);
 
                 // If the buff is not modified
                 if (!(modPlayer.alwaysPermanent[buffType] || modPlayer.goldenQueue[buffType] || modPlayer.neverPermanent[buffType]))
@@ -571,7 +575,7 @@ namespace PermaBuffs
         {
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
 
-            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner])
+            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner] || PermaBuffsConfig.instance.keepBannerBuffs)
             {
                 return modPlayer.activeBanners[bannerType];
             }
@@ -581,8 +585,42 @@ namespace PermaBuffs
             }
         }
 
+        internal static void ApplyBannerOffenseBuff(Terraria.On_Player.orig_ApplyBannerOffenseBuff_int_refHitModifiers orig, Player player, int bannerID, ref NPC.HitModifiers modifiers)
+        {
+            if (HasNPCBannerBuff(player, bannerID))
+            {
+                // Main.NewText("OffenseHook called");
+                ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
+                modifiers.TargetDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
+            }
+            else
+            {
+                // Main.NewText("OffenseOrig called");
+                orig(player, bannerID, ref modifiers);
+            }
+        }
+
+        internal static void ApplyBannerDefenseBuff(Terraria.On_Player.orig_ApplyBannerDefenseBuff_int_refHurtModifiers orig, Player player, int bannerID, ref Player.HurtModifiers modifiers)
+        {
+            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+
+            if (HasNPCBannerBuff(player, bannerID))
+            {
+                // Main.NewText("DefenseHook called");
+                ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
+                modifiers.IncomingDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
+            }
+            else
+            {
+                // Main.NewText("DefenseOrig called");
+                orig(player, bannerID, ref modifiers);
+            }
+        }
+
         internal static void MouseTextDrawBuffTooltip(Terraria.On_Main.orig_MouseText_DrawBuffTooltip orig, Main self, string buffString, ref int X, ref int Y, int buffNameHeight)
         {
+            Player player = Main.LocalPlayer;
+
             #region TmodloaderSourceCode
 
             Point p = new Point(X, Y);
@@ -605,11 +643,9 @@ namespace PermaBuffs
 
                 #endregion
 
-                PermaBuffsPlayer modPlayer = Main.LocalPlayer.GetModPlayer<PermaBuffsPlayer>();
-
                 for (int i = 0; i < NPCLoader.NPCCount; i++)
                 {
-                    if (Item.BannerToNPC(i) != 0 && HasNPCBannerBuff(Main.LocalPlayer, i))
+                    if (Item.BannerToNPC(i) != 0 && HasNPCBannerBuff(player, i))
 
                     #region TmodloaderSourceCode
 
@@ -666,7 +702,7 @@ namespace PermaBuffs
             for (int l = 0; l < NPCLoader.NPCCount; l++)
             {
                 #endregion
-                if (Item.BannerToNPC(l) == 0 || !HasNPCBannerBuff(Main.LocalPlayer, l))
+                if (Item.BannerToNPC(l) == 0 || !HasNPCBannerBuff(player, l))
                 {
                     continue;
                 }
@@ -719,47 +755,8 @@ namespace PermaBuffs
 #endregion
         }
 
-        internal static void ApplyBannerOffenseBuff(Terraria.On_Player.orig_ApplyBannerOffenseBuff_int_refHitModifiers orig, Player player, int bannerID, ref NPC.HitModifiers modifiers)
-        {
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-
-            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner])
-            {
-                // Main.NewText("OffenseHook called");
-                if (HasNPCBannerBuff(player, bannerID))
-                {
-                    ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
-                    modifiers.TargetDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
-                }
-            }
-            else
-            {
-                // Main.NewText("OffenseOrig called");
-                orig(player, bannerID, ref modifiers);
-            }
-        }
-
         #region TmodloaderUpdateBuffsDependencies
 
-        internal static void ApplyBannerDefenseBuff(Terraria.On_Player.orig_ApplyBannerDefenseBuff_int_refHurtModifiers orig, Player player, int bannerID, ref Player.HurtModifiers modifiers)
-        {
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-
-            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner])
-            {
-                // Main.NewText("DefenseHook called");
-                if (HasNPCBannerBuff(player, bannerID))
-                {
-                    ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
-                    modifiers.IncomingDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
-                }
-            }
-            else
-            {
-                // Main.NewText("DefenseOrig called");
-                orig(player, bannerID, ref modifiers);
-            }
-        }
         internal static string? ToContextString(int ID)
         {
             return ID switch
@@ -804,7 +801,7 @@ namespace PermaBuffs
                 int buffType = player.buffType[j];
 
                 // Don't decrement the time if it is a permabuff
-                if (player.whoAmI == Main.myPlayer && !BuffID.Sets.TimeLeftDoesNotDecrease[player.buffType[j]] && !modPlayer.alwaysPermanent[buffType])
+                if (player.whoAmI == Main.myPlayer && !BuffID.Sets.TimeLeftDoesNotDecrease[player.buffType[j]] && !modPlayer.alwaysPermanent[buffType] && !(buffType == BuffID.MonsterBanner && PermaBuffsConfig.instance.keepBannerBuffs))
                     player.buffTime[j]--;
 
                 //TML: player will be used at the very end of player scope.
@@ -3069,7 +3066,6 @@ namespace PermaBuffs
                 // if the buff was not found and we can re-add the buff
                 if (buffIndex == -1)
                 {
-                    // Re-add it
                     BuffInfo buff = new BuffInfo(player.buffType[buffIndex], player.buffTime[buffIndex]);
 
                     if (buff.canAddBuffToPlayer)
@@ -3096,11 +3092,9 @@ namespace PermaBuffs
             for (int i = 0; i < Player.MaxBuffs; i++)
             {
                 BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
-                
-                drawQueue[buff.type] = buff.shouldAddToDrawQueue;
 
-                // Populate saved banners with the banners on screen
-                if ((buff.type == BuffID.MonsterBanner && config.keepBannerBuffs) || alwaysPermanent[buff.type] || buff.timeLeft > 0)
+                // Populate saved banners with the banners on screen if banners are active
+                if (buff.type == BuffID.MonsterBanner && (config.keepBannerBuffs || alwaysPermanent[buff.type] || buff.timeLeft > 0))
                 {
                     for (int j = 0; j < NPCLoader.NPCCount; j++)
                     {
@@ -3113,6 +3107,8 @@ namespace PermaBuffs
                     bannersNeedRefresh = true;
                     bannersSet = true;
                 }
+
+                drawQueue[buff.type] = buff.shouldAddToDrawQueue;
             }
 
             // Banner buff is no longer there, set all collected types to false

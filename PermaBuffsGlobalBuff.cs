@@ -38,6 +38,15 @@ namespace PermaBuffs
         public override void ModifyBuffText(int type, ref string buffName, ref string tip, ref int rare)
         {
             PermaBuffsPlayer modPlayer = Main.LocalPlayer.GetModPlayer<PermaBuffsPlayer>();
+            PermaBuffsConfig config = PermaBuffsConfig.instance;
+
+            // Dont modify tooltip for buffs that are already modified or banners.
+            if ((type == BuffID.MonsterBanner) ||
+                (new PermaBuffsPlayer.BuffInfo(type).isStationBuff && config.keepStationBuffs) ||
+                modPlayer.alwaysPermanent[type] || modPlayer.goldenQueue[type] || modPlayer.neverPermanent[type])
+            {
+                return;
+            }
 
             List<string> permaBuffKey = PermaBuffsPlayer.alwaysPermanentKey.GetAssignedKeys();
             List<string> neverBuffKey = PermaBuffsPlayer.neverPermanentKey.GetAssignedKeys();
@@ -51,7 +60,7 @@ namespace PermaBuffs
                 tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaKeybindAsString);
                 modPlayer.permaTooltipSeen = false;
             }
-            else if (!(modPlayer.permaTooltipSeen || modPlayer.alwaysPermanent[type] || modPlayer.goldenQueue[type] || modPlayer.neverPermanent[type]))
+            else if (!(modPlayer.permaTooltipSeen || config.autoHideKeybindTooltips))
             {
                 tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
             }
@@ -60,9 +69,9 @@ namespace PermaBuffs
             {
                 string neverKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
                 tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverKeybindAsString);
-                modPlayer.permaTooltipSeen = false;
+                modPlayer.neverTooltipSeen = false;
             }
-            else if (!(modPlayer.neverTooltipSeen || modPlayer.alwaysPermanent[type] || modPlayer.goldenQueue[type] || modPlayer.neverPermanent[type]))
+            else if (!(modPlayer.neverTooltipSeen || config.autoHideKeybindTooltips))
             {
                 tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverBuffKey[0]);
             }

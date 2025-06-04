@@ -14,7 +14,6 @@ namespace PermaBuffs
 {
     public class PermaBuffsConfig : ModConfig
     {
-        public override bool AcceptClientChanges(ModConfig pendingConfig, int whoAmI, ref NetworkText message) => true;
         public override ConfigScope Mode => ConfigScope.ClientSide;
         public static PermaBuffsConfig instance { get { return ModContent.GetInstance<PermaBuffsConfig>(); } }
 

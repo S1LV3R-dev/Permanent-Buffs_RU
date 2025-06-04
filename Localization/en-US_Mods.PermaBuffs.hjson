@@ -4,7 +4,7 @@ Configs: {
 
 		keepStationBuffs: {
 			Tooltip: This makes buffs such as the ones obtained from the Sharpening Station, Bewitching Table, etc persist after death.
-			Label: Station Buffs Ignore Death
+			Label: Permanent Station Buffs
 		}
 
 		keepBannerBuffs: {
@@ -55,10 +55,10 @@ ToggleBuffNeverPermanent: {
 NotBound: ": <Not bound, set it in your control settings>"
 
 Keybinds: {
-	"Toggle Buff Always Permanent.DisplayName": Toggle Buff Is Always Permanent
+	"Toggle Buff Always Permanent.DisplayName": Toggle PermaBuff
 
 	"Toggle Buff Never Permanent": {
 		$parentVal: Toggle Buff Is Never Permanent
-		DisplayName: Toggle Buff Never Permanent
+		DisplayName: Toggle NeverBuff
 	}
 }
