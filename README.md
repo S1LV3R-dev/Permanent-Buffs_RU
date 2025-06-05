@@ -17,7 +17,7 @@ This mod should be compatible with most other mods and does not change any behav
 
 **Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex (potion sickness)
 Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
-In addition, there is a consistent game freeze that arises after death if you designate a summon/pet/mount as a Permabuff. I've coded a workaround for vanilla buffs but permabuffing any mod summons will not and cannot be supported.
+Permabuffing summons (mod summons too) will make the duration infinite, but they won't persist after death or load. You'll have to manually summon them each time.
 
 Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490291206
 

@@ -18,4 +18,4 @@ Github Link: https://github.com/linklight2/Permanent-Buffs
 
 **Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex (potion sickness)
 Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
-Permabuffing summons will only increase the duration, you'll still have to manually summon them each time.
+Permabuffing summons (mod summons too) will make the duration infinite, but they won't persist after death or load. You'll have to manually summon them each time.
