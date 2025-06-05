@@ -26,9 +26,6 @@ namespace PermaBuffs
             // Sets my custom function to be used instead of the default
             Terraria.On_Main.DrawBuffIcon += DrawBuffIcons;
 
-            // Make permanent buffs unable to be deleted
-            Terraria.On_Player.DelBuff += DeleteBuff;
-
             // Make never buffs unable to apply their effects
             Terraria.On_Player.UpdateBuffs += UpdateBuffs;
 
@@ -43,21 +40,6 @@ namespace PermaBuffs
             PermaBuffsPlayer.alwaysPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Always Permanent", Microsoft.Xna.Framework.Input.Keys.P);
             PermaBuffsPlayer.neverPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Never Permanent", Microsoft.Xna.Framework.Input.Keys.N);
         }
-
-        // Disables deleting user-defined permanent buffs
-        internal static void DeleteBuff(Terraria.On_Player.orig_DelBuff orig, Player player, int buffIndex)
-        {
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-
-            int buffType = player.buffType[buffIndex];
-
-            if (!modPlayer.alwaysPermanent[buffType])
-            {
-                orig(player, buffIndex);
-            }
-        }
-
-
 
         // This is a modified version of the original DrawBuffIcons function.
         // It inserts a golden frame around the buff icon to visually show it's modified to be permanent.
@@ -232,7 +214,7 @@ namespace PermaBuffs
             else
             {
                 // Sets the flag for the tooltip not to be shown after the player binds the key
-                bool autoHide = PermaBuffsConfig.instance.autoHideKeybindTooltips;
+                bool autoHide = config.autoHideKeybindTooltips;
 
                 if (modPlayer.viewingPermaTooltip == buffType)
                 {
@@ -300,8 +282,6 @@ namespace PermaBuffs
 
         internal static void ApplyBannerDefenseBuff(Terraria.On_Player.orig_ApplyBannerDefenseBuff_int_refHurtModifiers orig, Player player, int bannerID, ref Player.HurtModifiers modifiers)
         {
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-
             if (HasNPCBannerBuff(player, bannerID))
             {
                 // Main.NewText("DefenseHook called");

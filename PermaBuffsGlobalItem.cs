@@ -11,7 +11,7 @@ namespace PermaBuffs
     {
         public static void SaveItemType(Item item, Player player)
         {
-            if ((Main.netMode != NetmodeID.Server && item.buffType != 0) && (item.shoot != ProjectileID.None || item.sentry || item.CountsAsClass(DamageClass.Summon)) || item.mountType != -1)
+            if (item.buffType != 0 && (item.shoot != ProjectileID.None || item.sentry || item.CountsAsClass(DamageClass.Summon)) || item.mountType != -1)
             {
                 PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
                 modPlayer.buffItemIDs[item.buffType] = item.type;

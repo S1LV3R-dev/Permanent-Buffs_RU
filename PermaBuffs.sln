@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PermaBuffs", "PermaBuffs.csproj", "{5BB25A4A-3B5C-4586-8F69-7BF624C790CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PermaBuffs", "PermaBuffs.csproj", "{3548E11A-5F7B-4B26-A0A3-27B22F89B131}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5BB25A4A-3B5C-4586-8F69-7BF624C790CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5BB25A4A-3B5C-4586-8F69-7BF624C790CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5BB25A4A-3B5C-4586-8F69-7BF624C790CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5BB25A4A-3B5C-4586-8F69-7BF624C790CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3548E11A-5F7B-4B26-A0A3-27B22F89B131}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3548E11A-5F7B-4B26-A0A3-27B22F89B131}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3548E11A-5F7B-4B26-A0A3-27B22F89B131}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3548E11A-5F7B-4B26-A0A3-27B22F89B131}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
