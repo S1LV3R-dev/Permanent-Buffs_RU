@@ -1,8 +1,9 @@
 [h1]Permanent Buffs[/h1]
 
-Permanent Buffs is a simple mod that allows the user better control over their buffs. This can be done in two ways:
+Permanent Buffs is a simple mod that allows the user better control over their buffs. Tired of having to go to each station everytime you respawn?
+Tired of having to replace banners everywhere you go? Tired of your summons expiring in your afk farm? Permanent buffs has you covered.
 
-- PermaBuff: By designating a buff as a 'PermaBuff', it becomes permanent. This means the buff has an infinite duration, cannot be deleted, and will be re-applied after a death/save&quit.
+- PermaBuff: By designating a buff as a 'PermaBuff', it becomes permanent. This means the buff has an infinite duration and will be re-applied instantly if it's ever deleted.
 PermaBuffs are indicated by a Golden Border around the buff icon.
 - NeverBuff: By designating a buff as a 'NeverBuff', it becomes inactive. This means the buff will be blocked from applying its effects in 'Buff.Update' and force enables deletion by right clicking the buff. 
 Neverbuffs are indicated by a Purple Border around the buff icon.
@@ -14,6 +15,7 @@ This mod should be compatible with most other mods and does not change any behav
 - Option to selectively apply death/save&quit persistence to banners, so that they remain wherever you go once placed.
 - Option to disable visuals on affected buff icons.
 - Option to hide additional keybind tooltips once the keybinds are bound.
+- Option to disable death/save&quit persistence entirely
 
 All the code is also on github if you want to edit the mod for your own preferences or take a look at how I coded anything.
 Github Link: https://github.com/linklight2/Permanent-Buffs
