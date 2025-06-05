@@ -55,9 +55,6 @@ namespace PermaBuffs
             {
                 orig(player, buffIndex);
             }
-
-            // 
-            modPlayer.buffItemIDs[buffType] = 0;
         }
 
 

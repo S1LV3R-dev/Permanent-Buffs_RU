@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.Enums;
 using Terraria.GameContent;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.GameContent.UI;
@@ -30,23 +31,48 @@ namespace PermaBuffs
 {
     class PermaBuffsGlobalBuff : GlobalBuff
     {
-        public override bool RightClick(int type, int buffIndex)
-        {
-            return base.RightClick(type, buffIndex);
-        }
         // Insert a tooltip on how to use the mod if the modkeys are not bound
         public override void ModifyBuffText(int type, ref string buffName, ref string tip, ref int rare)
         {
             PermaBuffsPlayer modPlayer = Main.LocalPlayer.GetModPlayer<PermaBuffsPlayer>();
             PermaBuffsConfig config = PermaBuffsConfig.instance;
+            bool modifiedIcon = true;
+
+            // Modify buff name if the icon is modified by the mod
+
+            if (modPlayer.alwaysPermanent[type])
+            {
+                buffName = "PermaBuff: " + buffName;
+                rare = ItemRarityID.Yellow;
+            }
+            else if (modPlayer.neverPermanent[type])
+            {
+                buffName = "NeverBuff: " + buffName;
+                rare = ItemRarityID.Purple;
+            }
+            else if (type == BuffID.MonsterBanner)
+            {
+                if (config.keepBannerBuffs)
+                {
+                    buffName = "PermaBuff: " + buffName;
+                    rare = ItemRarityID.Yellow;
+                }
+            }
+            else if (BuffInfo.IsStationBuff(type) && config.keepStationBuffs)
+            {
+                buffName = "PermaBuff: " + buffName;
+                rare = ItemRarityID.Yellow;
+            }
+            else if (!modPlayer.goldenQueue[type])
+            {
+                modifiedIcon = false;
+            }
 
             // Dont modify tooltip for buffs that are already modified or banners.
-            if ((type == BuffID.MonsterBanner) ||
-                (new PermaBuffsPlayer.BuffInfo(type).isStationBuff && config.keepStationBuffs) ||
-                modPlayer.alwaysPermanent[type] || modPlayer.goldenQueue[type] || modPlayer.neverPermanent[type])
-            {
+            if (modifiedIcon)
                 return;
-            }
+
+            // Modify tooltips
 
             List<string> permaBuffKey = PermaBuffsPlayer.alwaysPermanentKey.GetAssignedKeys();
             List<string> neverBuffKey = PermaBuffsPlayer.neverPermanentKey.GetAssignedKeys();
@@ -54,47 +80,32 @@ namespace PermaBuffs
             modPlayer.permaBound = permaBuffKey.Count > 0;
             modPlayer.neverBound = neverBuffKey.Count > 0;
 
-            if (!modPlayer.permaBound)
+            if (!BuffInfo.IsActuallyADebuff(type)) // Show permabuff tooltips for Buffs
             {
-                string permaKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
-                tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaKeybindAsString);
-                modPlayer.permaTooltipSeen = false;
-            }
-            else if (!(modPlayer.permaTooltipSeen || config.autoHideKeybindTooltips))
-            {
-                tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
-            }
-
-            if (!modPlayer.neverBound)
-            {
-                string neverKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
-                tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverKeybindAsString);
-                modPlayer.neverTooltipSeen = false;
-            }
-            else if (!(modPlayer.neverTooltipSeen || config.autoHideKeybindTooltips))
-            {
-                tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverBuffKey[0]);
-            }
-
-            /*
-
-            if (type == BuffID.MonsterBanner && modPlayer.alwaysPermanent[type])
-            {
-                tip = "Increased damage and defense from the following:";
-
-                for (int i = 0; i < NPCLoader.NPCCount; i++)
+                if (!modPlayer.permaBound)
                 {
-                    int npcID = Item.BannerToNPC(i);
-
-                    if (modPlayer.activeBanners[i] && npcID != 0)
-                    {
-                        string npcName = Lang.GetNPCNameValue(npcID);
-                        tip += "\n" + npcName;
-                    }
+                    string permaKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaKeybindAsString);
+                    modPlayer.permaTooltipSeen = false;
+                }
+                else if (!(modPlayer.permaTooltipSeen || config.autoHideKeybindTooltips))
+                {
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
                 }
             }
-
-            */
+            else // Show neverbuff tooltips for Debuffs
+            {
+                if (!modPlayer.neverBound)
+                {
+                    string neverKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverKeybindAsString);
+                    modPlayer.neverTooltipSeen = false;
+                }
+                else if (!(modPlayer.neverTooltipSeen || config.autoHideKeybindTooltips))
+                {
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverBuffKey[0]);
+                }
+            }
         }
     }
 }

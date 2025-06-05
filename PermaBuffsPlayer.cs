@@ -25,256 +25,7 @@ using Terraria.GameContent.UI.Minimap;
 namespace PermaBuffs
 {
     public class PermaBuffsPlayer : ModPlayer
-	{
-        /// <summary>
-        /// Stores a buff's type and time left
-        /// </summary>
-        public struct BuffInfo
-        {
-            /// <summary>
-            /// The buff type of the buff. This can be obtained by either finding its vanilla BuffID or by getting it through Tmodloader.
-            /// </summary>
-            public int type;
-            /// <summary>
-            /// The amount of time remaining in ticks before the buff expires.
-            /// </summary>
-            public int timeLeft;
-
-            public BuffInfo(int type = 0, int timeLeft = 0)
-            {
-                this.type = type;
-                this.timeLeft = timeLeft;
-            }
-            public BuffInfo(string data)
-            {
-                string[] values = data.Split(" ");
-
-                try
-                {
-                    type = int.Parse(values[0]);
-                    timeLeft = int.Parse(values[1]);
-                }
-                catch 
-                {
-                    type = 0;
-                    timeLeft = 0;
-                }
-            }
-
-            public bool isVanilla { get { return type < BuffID.Count; } }
-            /// <summary>
-            /// Checks whether or not the buff is one of the 5 vanilla station buffs
-            /// </summary>
-            public bool isStationBuff
-            {
-                get
-                {
-                    switch (type)
-                    {
-                        case BuffID.Bewitched:
-                        case BuffID.Sharpened:
-                        case BuffID.AmmoBox:
-                        case BuffID.Clairvoyance:
-                        case BuffID.WarTable:
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-            }
-            /// <summary>
-            /// Returns whether or not the buff is junk data
-            /// </summary>
-            public bool isActive
-            {
-                get
-                {
-                    return type > 0 && timeLeft > 0;
-                }
-            }
-            public bool isVanillaMount
-            {
-                get
-                {
-                    bool mount = false;
-
-                    switch (type)
-                    {
-                        case BuffID.BunnyMount:
-                        case BuffID.PigronMount:
-                        case BuffID.SlimeMount:
-                        case BuffID.TurtleMount:
-                        case BuffID.BeeMount:
-                        case BuffID.UFOMount:
-                        case BuffID.DrillMount:
-                        case BuffID.ScutlixMount:
-                        case BuffID.UnicornMount:
-                        case BuffID.CuteFishronMount:
-                        case BuffID.BasiliskMount:
-                        case BuffID.GolfCartMount:
-                        case BuffID.PaintedHorseMount:
-                        case BuffID.MajesticHorseMount:
-                        case BuffID.DarkHorseMount:
-                        case BuffID.PogoStickMount:
-                        case BuffID.PirateShipMount:
-                        case BuffID.SpookyWoodMount:
-                        case BuffID.SantankMount:
-                        case BuffID.WallOfFleshGoatMount:
-                        case BuffID.DarkMageBookMount:
-                        case BuffID.LavaSharkMount:
-                        case BuffID.QueenSlimeMount:
-                        case BuffID.WolfMount:
-                        case BuffID.WitchBroom:
-                        case BuffID.Flamingo:
-                        case BuffID.Rudolph:
-                            mount = true;
-                            break;
-                    }
-
-                    return mount;
-                }
-            }
-            /// <summary>
-            /// Returns if the buff spawns a pet
-            /// </summary>
-            public bool isPet
-            {
-                get
-                {
-                    return Main.vanityPet[type] || Main.lightPet[type];
-                }
-            }
-
-            public bool isVanillaSummon
-            {
-                get
-                {
-                    bool summon = false;
-
-                    switch (type)
-                    {
-                        case BuffID.AbigailMinion:
-                        case BuffID.BabySlime:
-                        case BuffID.BabyBird:
-                        case BuffID.HornetMinion:
-                        case BuffID.ImpMinion:
-                        case BuffID.SpiderMinion:
-                        case BuffID.TwinEyesMinion:
-                        case BuffID.PirateMinion:
-                        case BuffID.Pygmies:
-                        case BuffID.UFOMinion:
-                        case BuffID.Ravens:
-                        case BuffID.SharknadoMinion:
-                        case BuffID.EmpressBlade:
-                        case BuffID.DeadlySphere:
-                        case BuffID.StardustDragonMinion:
-                        case BuffID.StardustGuardianMinion:
-                        case BuffID.StardustMinion:
-                        case BuffID.Smolstar:
-                        case BuffID.FlinxMinion:
-                        case BuffID.BatOfLight:
-                        case BuffID.VampireFrog:
-                            summon = true;
-                            break;
-                    }
-
-                    return summon;
-                }
-            }
-
-            /*
-            public bool canAddBuffToPlayer
-            {
-                get
-                {
-                    return isActive;
-                    // return isActive && !isPet && !isMount && !isSummon;
-                }
-            }
-            */
-            /// <summary>
-            /// Returns if the buff is a debuff
-            /// </summary>
-            public bool isDebuff { 
-                get 
-                {
-                     return Main.debuff[type];
-                }
-            }
-            /// <summary>
-            /// Determines whether or not the buff should persist through death depending on the current config options.
-            /// </summary>
-            public bool shouldPersistThroughDeath
-            {
-                get
-                {
-                    if (!isActive)
-                    {
-                        return false;
-                    }
-
-                    PermaBuffsConfig config = PermaBuffsConfig.instance;
-                    PermaBuffsPlayer modPlayer = Main.player[Main.myPlayer].GetModPlayer<PermaBuffsPlayer>();
-
-                    bool shouldPersist = false;
-                    shouldPersist = shouldPersist || (config.keepStationBuffs && isStationBuff);
-                    shouldPersist = shouldPersist || (config.keepBannerBuffs && type == BuffID.MonsterBanner);
-                    shouldPersist = shouldPersist || modPlayer.alwaysPermanent[type];
-                    shouldPersist = shouldPersist && !modPlayer.neverPermanent[type];
-                    shouldPersist = shouldPersist && !config.doNotApplyBuffsAfterDeathOrLoad;
-
-                    return shouldPersist;
-                }
-            }
-            public bool shouldAddToDrawQueue
-            {
-                get
-                {
-                    if (!isActive)
-                    {
-                        return false;
-                    }
-
-                    PermaBuffsPlayer modPlayer = Main.player[Main.myPlayer].GetModPlayer<PermaBuffsPlayer>();
-
-                    bool shouldDraw = modPlayer.alwaysPermanent[type];
-                    shouldDraw = shouldDraw || modPlayer.goldenQueue[type];
-                    shouldDraw = shouldDraw || modPlayer.neverPermanent[type];
-
-                    return shouldDraw;
-                }
-            }
-            /// <summary>
-            /// Returns the string form of the type and time left variables delimited by a space.
-            /// </summary>
-            /// <returns></returns>
-            public override string ToString()
-            {
-                return (string)this;
-            }
-            /// <summary>
-            /// Returns the string form of the type and time left variables delimited by a space.
-            /// </summary>
-            /// <returns></returns>
-            public static explicit operator string(BuffInfo buff)
-            {
-                string str = "";
-                str += buff.type.ToString() + " ";
-                str += buff.timeLeft.ToString();
-
-                return str;
-            }
-
-            public void AddBuffToPlayer(PermaBuffsPlayer modPlayer, Player player)
-            {
-                if (modPlayer.buffItemIDs[type] == 0) // Buff does not spawn a summon, projectile, or mount of some kind
-                {
-                    player.AddBuff(type, timeLeft);
-                    modPlayer.goldenQueue[type] = true;
-                }
-            }
-        }
-
+    {
         /// <summary>
         /// The list of buffs to be added to the player as soon as possible
         /// </summary>
@@ -342,7 +93,7 @@ namespace PermaBuffs
                 return;
             }
 
-            if (alwaysPermanentKeyPressed) 
+            if (alwaysPermanentKeyPressed)
             {
                 alwaysPermanent[buff.type] = !alwaysPermanent[buff.type];
                 neverPermanent[buff.type] = false;
@@ -413,7 +164,7 @@ namespace PermaBuffs
                 goldenTicks++;
             }
 
-            
+
             Player player = Main.LocalPlayer;
 
             // Re apply permanent buffs if they're somehow missing
@@ -429,11 +180,11 @@ namespace PermaBuffs
                 if (buffSlotOnPlayer == -1)
                 {
                     BuffInfo buff = new BuffInfo(buffType, TimeForGolden);
-                        // Re-add it
+                    // Re-add it
                     buff.AddBuffToPlayer(this, player);
                 }
             }
-            
+
         }
 
         /// <summary>
@@ -472,7 +223,7 @@ namespace PermaBuffs
                     bannersSet = true;
                 }
 
-                drawQueue[buff.type] = buff.shouldAddToDrawQueue;
+                drawQueue[buff.type] = buff.shouldAddToDrawQueue(this);
             }
 
             // Banner buff is no longer there, set all collected types to false
@@ -481,6 +232,56 @@ namespace PermaBuffs
                 bannersNeedRefresh = false;
                 activeBanners = new bool[NPCLoader.NPCCount];
             }
+        }
+
+        /// <summary>
+        /// Saves the buffs the player had before death
+        /// </summary>
+        /// <param name="damage"></param>
+        /// <param name="hitDirection"></param>
+        /// <param name="pvp"></param>
+        /// <param name="playSound"></param>
+        /// <param name="genDust"></param>
+        /// <param name="damageSource"></param>
+        /// <returns></returns>
+        public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust, ref PlayerDeathReason damageSource)
+        {
+            if (Main.netMode == NetmodeID.Server)
+                return true;
+
+            PermaBuffsConfig config = PermaBuffsConfig.instance;
+            Player player = Main.LocalPlayer;
+
+            for (int i = 0; i < Player.MaxBuffs; i++)
+            {
+                BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
+
+                // Queue the buff to be reapplied if the config settings allow for it
+                if (buff.shouldPersistThroughDeath(this, config))
+                    pendingBuffs.Add(buff);
+            }
+
+            return true;
+        }
+        /// <summary>
+        /// Applies the stored buffs from after death on respawn
+        /// </summary>
+        public override void OnRespawn()
+        {
+            Player player = Main.LocalPlayer;
+
+            foreach (BuffInfo buff in pendingBuffs)
+            {
+                if (player.HasBuff(buff.type))
+                {
+                    continue;
+                }
+
+                buff.AddBuffToPlayer(this, player);
+            }
+
+            goldenTicks = 0;
+            pendingBuffs.Clear();
         }
 
         /// <summary>
@@ -495,7 +296,7 @@ namespace PermaBuffs
             {
                 BuffInfo buff = pendingBuffs[i];
                 // Re-apply buffs between sessions if set to persist through death
-                if (buff.shouldPersistThroughDeath)
+                if (buff.shouldPersistThroughDeath(this, PermaBuffsConfig.instance))
                 {
                     buff.AddBuffToPlayer(this, player);
 
@@ -524,7 +325,6 @@ namespace PermaBuffs
             }
         }
 
-        
         public static void ParseTypeList(IList<string> list, ref bool[] array, bool countDifferent, int limit)
         {
             int type;
@@ -571,7 +371,7 @@ namespace PermaBuffs
             }
             catch
             {
-                npcCountDifferent = true; 
+                npcCountDifferent = true;
             }
 
             for (int i = 0; i < buffs.Count; i++)
@@ -579,7 +379,7 @@ namespace PermaBuffs
                 BuffInfo buff = new BuffInfo(buffs[i]);
 
                 // Don't add the buff if it is invalid
-                if (!buffCountDifferent || buff.type < BuffID.Count)
+                if (!buffCountDifferent || buff.isVanilla)
                     pendingBuffs.Add(buff);
             }
 
@@ -603,10 +403,8 @@ namespace PermaBuffs
                     continue;
                 }
 
-                if (buffCountDifferent && buffType >= BuffID.Count)
-                    continue;
-
-                buffItemIDs[buffType] = itemType;
+                if (!buffCountDifferent || BuffInfo.IsVanilla(buffType))
+                    buffItemIDs[buffType] = itemType;
             }
         }
         /// <summary>
@@ -630,7 +428,7 @@ namespace PermaBuffs
                 if (!buff.isActive)
                     continue;
 
-                buffs.Add((string)buff);
+                buffs.Add(buff.ToString());
             }
 
             for (int i = 0; i < BuffLoader.BuffCount; i++)
@@ -665,56 +463,6 @@ namespace PermaBuffs
             tag.Add("ItemList", itemList);
             tag.Add("CurrentBuffTotal", BuffLoader.BuffCount.ToString());
             tag.Add("CurrentNPCTotal", NPCLoader.NPCCount.ToString());
-        }
-
-        /// <summary>
-        /// Saves the buffs the player had before death
-        /// </summary>
-        /// <param name="damage"></param>
-        /// <param name="hitDirection"></param>
-        /// <param name="pvp"></param>
-        /// <param name="playSound"></param>
-        /// <param name="genDust"></param>
-        /// <param name="damageSource"></param>
-        /// <returns></returns>
-        public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust, ref PlayerDeathReason damageSource)
-        {
-            if (Main.netMode == NetmodeID.Server)
-                return true;
-
-            PermaBuffsConfig config = PermaBuffsConfig.instance;
-            Player player = Main.LocalPlayer;
-
-            for (int i = 0; i < Player.MaxBuffs; i++)
-            {
-                BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
-
-                // Queue the buff to be reapplied if the config settings allow for it
-                if (buff.shouldPersistThroughDeath)
-                    pendingBuffs.Add(buff);
-            }
-
-            return true; 
-        }
-        /// <summary>
-        /// Applies the stored buffs from after death on respawn
-        /// </summary>
-        public override void OnRespawn()
-        {
-            Player player = Main.LocalPlayer;
-
-            foreach (BuffInfo buff in pendingBuffs)
-            {
-                if (player.HasBuff(buff.type))
-                {
-                    continue;
-                }
-
-                buff.AddBuffToPlayer(this, player);
-            }
-
-            goldenTicks = 0;
-            pendingBuffs.Clear();
         }
     }
 }
