@@ -1,6 +1,11 @@
+using System.Media;
+using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
+using Terraria.ModLoader;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace PermaBuffs
 {
@@ -119,7 +124,7 @@ namespace PermaBuffs
         /// </summary>
         /// <param name="modPlayer"></param>
         /// <returns></returns>
-        public readonly bool BuffSpawnsEntity(PermaBuffsPlayer modPlayer) { return modPlayer.buffItemIDs[type] > 0; }
+        public readonly bool BuffSpawnsEntity(PermaBuffsPlayer modPlayer, out int id) { id = modPlayer.buffItemIDs[type]; return id > 0; }
 
         /// <summary>
         /// Determines whether or not the buff should persist through death depending on the current config options.
@@ -175,13 +180,167 @@ namespace PermaBuffs
 
             return str;
         }
-
+        /// <summary>
+        /// Properly adds a permabuff to the player, including summoning any associated summon with the permabuff
+        /// </summary>
+        /// <param name="modPlayer"></param>
+        /// <param name="player"></param>
         public void AddBuffToPlayer(PermaBuffsPlayer modPlayer, Player player)
         {
-            if (!BuffSpawnsEntity(modPlayer)) 
+            // Client only code
+            if (Main.netMode == NetmodeID.Server)
+                return;
+
+            player.AddBuff(type, timeLeft);
+            modPlayer.goldenQueue[type] = true;
+
+            // Summon only code ahead
+            if (!BuffSpawnsEntity(modPlayer, out int itemNetID))
+                return;
+
+            ref float minionSlots = ref modPlayer.minionSlots;
+            ref float minionIncrease = ref modPlayer.minionIncrease;
+
+            int itemIndex = player.FindItem(itemNetID);
+
+            // The player does not have the stored item in their inventory to get spawn stats from.
+            if (itemIndex == -1)
+                return;
+
+            // Get the actual item reference
+            Item item = player.inventory[itemIndex];
+
+            SoundEngine.PlaySound(item.UseSound);
+
+            while (minionSlots < modPlayer.maxMinions)
             {
-                player.AddBuff(type, timeLeft);
-                modPlayer.goldenQueue[type] = true;
+                #region TmodLoader Code Variable Dependencies
+
+                Vector2 pointPosition = player.RotatedRelativePoint(player.MountedCenter);
+                var projSource = player.GetSource_ItemUse_WithPotentialAmmo(item, 0);
+                int playerIndex = player.whoAmI;
+                int damage = player.GetWeaponDamage(item);
+                int baseDamage = item.damage;
+                int summonID = item.shoot;
+                float knockBack = player.GetWeaponKnockback(item, item.knockBack);
+                int projIndex = -1;
+                float num2 = (float)Main.mouseX + Main.screenPosition.X - pointPosition.X;
+                float num3 = (float)Main.mouseY + Main.screenPosition.Y - pointPosition.Y;
+                if (player.gravDir == -1f)
+                {
+                    num3 = Main.screenPosition.Y + (float)Main.screenHeight - (float)Main.mouseY - pointPosition.Y;
+                }
+                Vector2 velocity = new Vector2(num2, num3);
+
+                #endregion
+
+                // These take care of mod summons.
+                CombinedHooks.ModifyShootStats(player, item, ref pointPosition, ref velocity, ref summonID, ref damage, ref knockBack);
+
+                if (!CombinedHooks.Shoot(player, item, (EntitySource_ItemUse_WithAmmo)projSource, pointPosition, velocity, summonID, damage, knockBack))
+                    return;
+
+                minionIncrease = 0f;
+
+                #region Tmodloader Summon Spawn Code Stitched Together + My Minion Trackers
+
+                if (item.type == ItemID.PygmyStaff)
+                {
+                    summonID = Main.rand.Next(191, 195);
+                    projIndex = player.SpawnMinionOnCursor(projSource, playerIndex, summonID, damage, knockBack);
+                    Main.projectile[projIndex].localAI[0] = 30f;
+
+                    minionIncrease = 1;
+                }
+                else if (item.type == ItemID.OpticStaff)
+                {
+                    float x = 0f;
+                    float y = 0f;
+                    Vector2 spinningpoint = new Vector2(x, y);
+                    spinningpoint = spinningpoint.RotatedBy(1.5707963705062866);
+                    projIndex = player.SpawnMinionOnCursor(projSource, playerIndex, summonID, damage, knockBack, spinningpoint, spinningpoint);
+                    spinningpoint = spinningpoint.RotatedBy(-3.1415927410125732);
+                    projIndex = player.SpawnMinionOnCursor(projSource, playerIndex, summonID + 1, damage, knockBack, spinningpoint, spinningpoint);
+
+                    minionIncrease = 1;
+                }
+                else if (item.type == ItemID.SpiderStaff)
+                {
+                    projIndex = player.SpawnMinionOnCursor(projSource, playerIndex, summonID + player.nextCycledSpiderMinionType, damage, knockBack);
+                    player.nextCycledSpiderMinionType++;
+                    player.nextCycledSpiderMinionType %= 3;
+
+                    minionIncrease = 1;
+                }
+                else if (item.type == ItemID.StardustDragonStaff)
+                {
+                    int num142 = -1;
+                    int num143 = -1;
+                    for (int num144 = 0; num144 < 1000; num144++)
+                    {
+                        if (Main.projectile[num144].active && Main.projectile[num144].owner == Main.myPlayer)
+                        {
+                            if (num142 == -1 && Main.projectile[num144].type == 625)
+                            {
+                                num142 = num144;
+                            }
+                            if (num143 == -1 && Main.projectile[num144].type == 628)
+                            {
+                                num143 = num144;
+                            }
+                            if (num142 != -1 && num143 != -1)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    if (num142 == -1 && num143 == -1)
+                    {
+                        num2 = 0f;
+                        num3 = 0f;
+                        pointPosition.X = (float)Main.mouseX + Main.screenPosition.X;
+                        pointPosition.Y = (float)Main.mouseY + Main.screenPosition.Y;
+                        int num145 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID, damage, knockBack, playerIndex);
+                        int num146 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID + 1, damage, knockBack, playerIndex, num145);
+                        int num147 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID + 2, damage, knockBack, playerIndex, num146);
+                        int num148 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID + 3, damage, knockBack, playerIndex, num147);
+                        Main.projectile[num146].localAI[1] = num147;
+                        Main.projectile[num147].localAI[1] = num148;
+                        Main.projectile[num145].originalDamage = baseDamage;
+                        Main.projectile[num146].originalDamage = baseDamage;
+                        Main.projectile[num147].originalDamage = baseDamage;
+                        Main.projectile[num148].originalDamage = baseDamage;
+                    }
+                    else if (num142 != -1 && num143 != -1)
+                    {
+                        int num149 = (int)Main.projectile[num143].ai[0];
+                        int num150 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID + 1, damage, knockBack, playerIndex, num149);
+                        int num151 = Projectile.NewProjectile(projSource, pointPosition.X, pointPosition.Y, num2, num3, summonID + 2, damage, knockBack, playerIndex, num150);
+                        Main.projectile[num150].localAI[1] = num151;
+                        Main.projectile[num150].netUpdate = true;
+                        Main.projectile[num150].ai[1] = 1f;
+                        Main.projectile[num151].localAI[1] = num143;
+                        Main.projectile[num151].netUpdate = true;
+                        Main.projectile[num151].ai[1] = 1f;
+                        Main.projectile[num143].ai[0] = num151;
+                        Main.projectile[num143].netUpdate = true;
+                        Main.projectile[num143].ai[1] = 1f;
+                        Main.projectile[num150].originalDamage = baseDamage;
+                        Main.projectile[num151].originalDamage = baseDamage;
+                        Main.projectile[num143].originalDamage = baseDamage;
+                    }
+
+                    minionIncrease = 1;
+                }
+                else
+                {
+                    projIndex = player.SpawnMinionOnCursor(projSource, playerIndex, summonID, damage, knockBack);
+                    minionIncrease = Main.projectile[projIndex].minionSlots;
+                }
+
+                #endregion
+
+                minionSlots += minionIncrease;
             }
         }
     }

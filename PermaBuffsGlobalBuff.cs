@@ -63,7 +63,7 @@ namespace PermaBuffs
                 buffName = "PermaBuff: " + buffName;
                 rare = ItemRarityID.Yellow;
             }
-            else if (!modPlayer.goldenQueue[type])
+            else if (!(modPlayer.goldenQueue[type] || BuffInfo.IsPet(type)))
             {
                 modifiedIcon = false;
             }

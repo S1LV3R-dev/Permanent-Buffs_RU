@@ -12,14 +12,14 @@ Both Permabuffs and Neverbuffs can be toggled by hovering the mouse over the buf
 
 This mod should be compatible with most other mods and does not change any behaviour unless the config options are enabled. Some additional features are:
 - Option to selectively apply death/save&quit persistence to station buffs, so you don't have to click the stations every time you respawn.
-- Option to selectively apply death/save&quit persistence to banners, so that they remain wherever you go once placed.
+- Option to selectively apply death/save&quit persistence to banners, so that they remain with you wherever you go once placed.
 - Option to disable visuals on affected buff icons.
 - Option to hide additional keybind tooltips once the keybinds are bound.
 - Option to disable death/save&quit persistence entirely
+- PermaBuffing summons is now FULLY supported! As long as you keep the summoning item in your inventory and PermaBuff the icon, the mod will automatically fill all your summon slots! This works with mod summons too.
 
-**Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex (potion sickness)
+**Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex: (Potion Sickness)
 Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
-Permabuffing summons (mod summons too) will make the duration infinite, but they won't persist after death or load. You'll have to manually summon them each time.
 
 Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490291206
 

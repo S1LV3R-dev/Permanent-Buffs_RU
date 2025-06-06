@@ -64,6 +64,9 @@ namespace PermaBuffs
 
         public int viewingPermaTooltip = 0;
         public int viewingNeverTooltip = 0;
+        public float minionSlots;
+        public float minionIncrease;
+        public float maxMinions = 1f;
 
         public bool permaBound = false;
         public bool neverBound = false;
@@ -153,6 +156,9 @@ namespace PermaBuffs
             if (Main.netMode == NetmodeID.Server)
                 return;
 
+            minionSlots = 0f;
+            minionIncrease = 0f;
+
             // Golden queue manager. 
             if (goldenTicks < TimeForGolden)
             {
@@ -164,8 +170,8 @@ namespace PermaBuffs
                 goldenTicks++;
             }
 
-
             Player player = Main.LocalPlayer;
+            if (!player.dead) pendingBuffs.Clear();
 
             // Re apply permanent buffs if they're somehow missing
             for (int buffType = 0; buffType < BuffLoader.BuffCount; buffType++)
@@ -183,8 +189,13 @@ namespace PermaBuffs
                     // Re-add it
                     buff.AddBuffToPlayer(this, player);
                 }
+                else if (player.slotsMinions < maxMinions && buffItemIDs[buffType] != 0)
+                {
+                    BuffInfo buff = new BuffInfo(buffType, player.buffTime[buffSlotOnPlayer]);
+                    // more minions
+                    buff.AddBuffToPlayer(this, player);
+                }
             }
-
         }
 
         /// <summary>
@@ -263,21 +274,20 @@ namespace PermaBuffs
 
             return true;
         }
+
         /// <summary>
         /// Applies the stored buffs from after death on respawn
         /// </summary>
         public override void OnRespawn()
         {
             Player player = Main.LocalPlayer;
+            minionSlots = 0f;
+            minionIncrease = 0f;
 
             foreach (BuffInfo buff in pendingBuffs)
             {
-                if (player.HasBuff(buff.type))
-                {
-                    continue;
-                }
-
-                buff.AddBuffToPlayer(this, player);
+                if (!player.HasBuff(buff.type))
+                    buff.AddBuffToPlayer(this, player);
             }
 
             goldenTicks = 0;
@@ -291,6 +301,8 @@ namespace PermaBuffs
         {
             Player player = Main.LocalPlayer;
             bool hasBanner = false;
+            minionSlots = 0f;
+            minionIncrease = 0f;
 
             for (int i = 0; i < pendingBuffs.Count && i < Player.MaxBuffs; i++)
             {
@@ -323,6 +335,13 @@ namespace PermaBuffs
                 Main.NewText("The number of ModNPCs currently loaded are different from when they were previously saved. This means the non-vanilla npcID's previously saved are no longer valid.\n" +
                    "Therefore only Vanilla NPCs are loaded. This issue is caused by adding or removing mods that contain a ModNPC between saves.", Color.Red);
             }
+        }
+
+
+        public override void PostUpdate()
+        {
+            if (Main.netMode != NetmodeID.Server)
+                maxMinions = Main.LocalPlayer.maxMinions;
         }
 
         public static void ParseTypeList(IList<string> list, ref bool[] array, bool countDifferent, int limit)
