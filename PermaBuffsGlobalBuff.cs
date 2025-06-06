@@ -42,26 +42,24 @@ namespace PermaBuffs
 
             if (modPlayer.alwaysPermanent[type])
             {
-                buffName = "PermaBuff: " + buffName;
+                buffName = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.PermaBuffPreBuffDisplayName") + buffName;
                 rare = ItemRarityID.Yellow;
             }
             else if (modPlayer.neverPermanent[type])
             {
-                buffName = "NeverBuff: " + buffName;
-                rare = ItemRarityID.Purple;
+                buffName = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.NeverBuffPreBuffDisplayName") + buffName;
+                rare = ItemRarityID.Purple; 
             }
             else if (type == BuffID.MonsterBanner)
             {
                 if (config.keepBannerBuffs)
                 {
-                    buffName = "PermaBuff: " + buffName;
-                    rare = ItemRarityID.Yellow;
+                    buffName = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.PermaBuffPreBuffDisplayName") + buffName;
                 }
             }
             else if (BuffInfo.IsStationBuff(type) && config.keepStationBuffs)
             {
-                buffName = "PermaBuff: " + buffName;
-                rare = ItemRarityID.Yellow;
+                buffName = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.PermaBuffPreBuffDisplayName") + buffName;
             }
             else if (!(modPlayer.goldenQueue[type] || BuffInfo.IsPet(type)))
             {
@@ -84,26 +82,26 @@ namespace PermaBuffs
             {
                 if (!modPlayer.permaBound)
                 {
-                    string permaKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
-                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaKeybindAsString);
+                    string permaKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffAlwaysPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobablBuff.ToggleBuffAlwaysPermanent.Tooltip", permaKeybindAsString);
                     modPlayer.permaTooltipSeen = false;
                 }
                 else if (!(modPlayer.permaTooltipSeen || config.autoHideKeybindTooltips))
                 {
-                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
                 }
             }
             else // Show neverbuff tooltips for Debuffs
             {
                 if (!modPlayer.neverBound)
                 {
-                    string neverKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
-                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverKeybindAsString);
+                    string neverKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffNeverPermanent.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffNeverPermanent.Tooltip", neverKeybindAsString);
                     modPlayer.neverTooltipSeen = false;
                 }
                 else if (!(modPlayer.neverTooltipSeen || config.autoHideKeybindTooltips))
                 {
-                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.ToggleBuffNeverPermanent.Tooltip", neverBuffKey[0]);
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffNeverPermanent.Tooltip", neverBuffKey[0]);
                 }
             }
         }

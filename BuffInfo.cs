@@ -198,7 +198,7 @@ namespace PermaBuffs
             if (!BuffSpawnsEntity(modPlayer, out int itemNetID))
                 return;
 
-            ref float minionSlots = ref modPlayer.minionSlots;
+            float minionSlots = player.slotsMinions;
             ref float minionIncrease = ref modPlayer.minionIncrease;
 
             int itemIndex = player.FindItem(itemNetID);
@@ -210,9 +210,7 @@ namespace PermaBuffs
             // Get the actual item reference
             Item item = player.inventory[itemIndex];
 
-            SoundEngine.PlaySound(item.UseSound);
-
-            while (minionSlots < modPlayer.maxMinions)
+            while (minionSlots + minionIncrease <= modPlayer.maxMinions)
             {
                 #region TmodLoader Code Variable Dependencies
 
@@ -241,6 +239,7 @@ namespace PermaBuffs
                     return;
 
                 minionIncrease = 0f;
+                SoundEngine.PlaySound(item.UseSound);
 
                 #region Tmodloader Summon Spawn Code Stitched Together + My Minion Trackers
 

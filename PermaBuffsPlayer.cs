@@ -71,7 +71,9 @@ namespace PermaBuffs
         public bool permaBound = false;
         public bool neverBound = false;
         public bool buffCountDifferent = false;
+        public bool tryAddModBuff;
         public bool npcCountDifferent = false;
+        public bool tryAddModBanner;
         public bool bannersNeedRefresh = false;
         public bool initialized = false;
 
@@ -80,13 +82,14 @@ namespace PermaBuffs
 
         public override void Initialize()
         {
-            drawQueue = new bool[BuffLoader.BuffCount];
             goldenQueue = new bool[BuffLoader.BuffCount];
             alwaysPermanent = new bool[BuffLoader.BuffCount];
             neverPermanent = new bool[BuffLoader.BuffCount];
             buffItemIDs = new int[BuffLoader.BuffCount];
             activeBanners = new bool[NPCLoader.NPCCount];
             initialized = true;
+            tryAddModBanner = false;
+            tryAddModBuff = false;
         }
 
         public void CheckToggleKeys(BuffInfo buff, int buffSlot)
@@ -96,6 +99,8 @@ namespace PermaBuffs
                 return;
             }
 
+            SoundEngine.PlaySound(SoundID.MenuTick);
+
             if (alwaysPermanentKeyPressed)
             {
                 alwaysPermanent[buff.type] = !alwaysPermanent[buff.type];
@@ -104,18 +109,16 @@ namespace PermaBuffs
                 if (!alwaysPermanent[buff.type])
                 {
                     Player player = Main.LocalPlayer;
-
                     player.buffTime[buffSlot] = Math.Max(buff.timeLeft, TimeForGolden);
                 }
-
-                SoundEngine.PlaySound(SoundID.MenuTick);
             }
             else if (neverPermanentKeyPressed)
             {
                 neverPermanent[buff.type] = !neverPermanent[buff.type];
                 alwaysPermanent[buff.type] = false;
 
-                SoundEngine.PlaySound(SoundID.MenuTick);
+                if (buffItemIDs[buff.type] != 0 && neverPermanent[buff.type])
+                    Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NeverBuffSummon"));
             }
 
             alwaysPermanentKeyPressed = false;
@@ -157,7 +160,6 @@ namespace PermaBuffs
                 return;
 
             minionSlots = 0f;
-            minionIncrease = 0f;
 
             // Golden queue manager. 
             if (goldenTicks < TimeForGolden)
@@ -189,7 +191,7 @@ namespace PermaBuffs
                     // Re-add it
                     buff.AddBuffToPlayer(this, player);
                 }
-                else if (player.slotsMinions < maxMinions && buffItemIDs[buffType] != 0)
+                else if (player.slotsMinions + minionIncrease <= maxMinions && buffItemIDs[buffType] != 0)
                 {
                     BuffInfo buff = new BuffInfo(buffType, player.buffTime[buffSlotOnPlayer]);
                     // more minions
@@ -209,8 +211,6 @@ namespace PermaBuffs
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             Player player = Main.LocalPlayer;
             bool bannersSet = false;
-
-            drawQueue = new bool[BuffLoader.BuffCount];
 
             for (int i = 0; i < Player.MaxBuffs; i++)
             {
@@ -233,8 +233,6 @@ namespace PermaBuffs
                     bannersNeedRefresh = true;
                     bannersSet = true;
                 }
-
-                drawQueue[buff.type] = buff.shouldAddToDrawQueue(this);
             }
 
             // Banner buff is no longer there, set all collected types to false
@@ -300,7 +298,7 @@ namespace PermaBuffs
         public override void OnEnterWorld()
         {
             Player player = Main.LocalPlayer;
-            bool hasBanner = false;
+            PermaBuffsConfig config = PermaBuffsConfig.instance;
             minionSlots = 0f;
             minionIncrease = 0f;
 
@@ -308,32 +306,22 @@ namespace PermaBuffs
             {
                 BuffInfo buff = pendingBuffs[i];
                 // Re-apply buffs between sessions if set to persist through death
-                if (buff.shouldPersistThroughDeath(this, PermaBuffsConfig.instance))
-                {
+                if (buff.shouldPersistThroughDeath(this, config))
                     buff.AddBuffToPlayer(this, player);
-
-                    if (buff.type == BuffID.MonsterBanner)
-                    {
-                        hasBanner = true;
-                    }
-                }
             }
 
             goldenTicks = 0;
             pendingBuffs.Clear();
 
             // Error handlers.
-
-            if (buffCountDifferent)
+            if (buffCountDifferent && tryAddModBuff)
             {
-                Main.NewText("The number of ModBuffs currently loaded are different from when they were previously saved. This means the non-vanilla buffID's previously saved are no longer valid.\n" +
-                    "Therefore only Vanilla buffs are loaded. This issue is caused by adding or removing mods that contain a ModBuff between saves.", Color.Red);
+                Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.BuffCountDifferent"));
             }
 
-            if (npcCountDifferent && hasBanner)
+            if (npcCountDifferent && tryAddModBanner)
             {
-                Main.NewText("The number of ModNPCs currently loaded are different from when they were previously saved. This means the non-vanilla npcID's previously saved are no longer valid.\n" +
-                   "Therefore only Vanilla NPCs are loaded. This issue is caused by adding or removing mods that contain a ModNPC between saves.", Color.Red);
+                Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NpcCountDifferent"));
             }
         }
 
@@ -344,7 +332,7 @@ namespace PermaBuffs
                 maxMinions = Main.LocalPlayer.maxMinions;
         }
 
-        public static void ParseTypeList(IList<string> list, ref bool[] array, bool countDifferent, int limit)
+        public static void ParseTypeList(IList<string> list, ref bool[] array, bool countDifferent, int limit, ref bool errorTracker)
         {
             int type;
 
@@ -353,7 +341,10 @@ namespace PermaBuffs
                 if (!int.TryParse(list[i], out type))
                     continue;
                 if (countDifferent && type >= limit)
+                {
+                    errorTracker = true;
                     continue;
+                }
 
                 array[type] = true;
             }
@@ -402,15 +393,18 @@ namespace PermaBuffs
                     pendingBuffs.Add(buff);
             }
 
-            ParseTypeList(permaList, ref alwaysPermanent, buffCountDifferent, BuffID.Count);
-            ParseTypeList(neverList, ref neverPermanent, buffCountDifferent, BuffID.Count);
-            ParseTypeList(bannerList, ref activeBanners, npcCountDifferent, NPCID.Count);
+            ParseTypeList(permaList, ref alwaysPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
+            ParseTypeList(neverList, ref neverPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
+            ParseTypeList(bannerList, ref activeBanners, npcCountDifferent, NPCID.Count, ref tryAddModBanner);
 
             for (int i = 0; i < itemList.Count; i++)
             {
                 string[] list = itemList[i].ToString().Split(',');
                 int buffType;
                 int itemType;
+
+                if (list.Length != 2)
+                    continue;
 
                 try
                 {

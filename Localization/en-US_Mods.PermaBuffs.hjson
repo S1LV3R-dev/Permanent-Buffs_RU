@@ -25,34 +25,55 @@ Configs: {
 		doNotApplyBuffsAfterDeathOrLoad: {
 			Tooltip:
 				'''
-				In the case a buff that spawns another npc is PermaBuffed and the player dies or saves and exits - if it is a Modbuff there is a high chance the game will freeze.
-				This is helpful for that case. By toggling this on, you disable any buffs from being loaded upon death or spawn. This prevents any associated freeze from this mod.
-				Also nice if you only want the duration increase.
+				By toggling this on, you disable any perma/never buffs from being loaded upon death or spawn.
+				This is useful if you only want the duration increase or want to reset your perma/never buffs.
 				'''
 			Label: Do Not Apply Buffs After Death Or Load
 		}
 	}
 }
 
-ToggleBuffAlwaysPermanent: {
-	DisplayName: Toggle Always Permanent
-	Tooltip:
-		'''
-		Press [c/ff0000:{0}] to save this as a [c/ffd700:Permabuff].
-		[c/ffd700:PermaBuffs] are always kept [c/ffd700:permanently active].
-		'''
+GlobalBuff: {
+	ToggleBuffAlwaysPermanent: {
+		DisplayName: Toggle Always Permanent
+		Tooltip:
+			'''
+			Press [c/ff0000:{0}] to save this as a [c/ffff00:Permabuff]
+			[c/ffff00:PermaBuffs] are always kept [c/ffff00:permanently active]
+			'''
+	}
+
+	ToggleBuffNeverPermanent: {
+		DisplayName: Toggle Never Permanent
+		Tooltip:
+			'''
+			Press [c/ff0000:{0}] to save this as a [c/9370db:NeverBuff]
+			[c/9370db:NeverBuffs] are partially blocked from applying to the player and can almost always be removed
+			'''
+	}
+
+	PermaBuffPreBuffDisplayName: "[c/ffff00:PermaBuff: ]"
+	NeverBuffPreBuffDisplayName: "[c/9370db:NeverBuff: ]"
 }
 
-ToggleBuffNeverPermanent: {
-	DisplayName: Toggle Never Permanent
-	Tooltip:
+Errors: {
+	BuffCountDifferent:
 		'''
-		Press [c/ff0000:{0}] to save this as a [c/9370db:NeverBuff].
-		[c/9370db:NeverBuffs] are partially blocked from applying to the player and can almost always be removed.
+		[c/ff0000:The number of ModBuffs currently loaded are different from when they were previously saved. This means the non-vanilla buffID's previously saved are no longer valid.]
+		[c/ff0000:Therefore only Vanilla buffs are loaded. This issue is caused by adding or removing mods that contain a ModBuff between saves.]
+		'''
+	NpcCountDifferent:
+		'''
+		[c/ff0000:The number of ModNPCs currently loaded are different from when they were previously saved. This means the non-vanilla npcID's previously saved are no longer valid.]
+		[c/ff0000:Therefore only Vanilla NPCs are loaded into the active banners list. This issue is caused by adding or removing mods that contain a ModNPC between saves.]
+		'''
+	NeverBuffSummon:
+		'''
+		[c/ff0000:After a summon is NeverBuffed, any time you try to resummon that minion the buff icon will be automatically deleted.]
+		[c/ff0000:This means you will not be able to easily undo the Neverbuff icon change if the buff is ever removed while Neverbuffed.]
+		[c/ff0000:It is recommended that you untoggle this NeverBuff.]
 		'''
 }
-
-NotBound: ": <Not bound, set it in your control settings>"
 
 Keybinds: {
 	"Toggle Buff Always Permanent.DisplayName": Toggle PermaBuff
@@ -61,4 +82,6 @@ Keybinds: {
 		$parentVal: Toggle Buff Is Never Permanent
 		DisplayName: Toggle NeverBuff
 	}
+
+	NotBound: ": <Not bound, set it in your control settings>"
 }

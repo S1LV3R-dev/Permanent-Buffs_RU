@@ -121,8 +121,7 @@ namespace PermaBuffs
             {
                 // Look at the queues and determines whether or not to draw the border
 
-                shouldDrawBorder = modPlayer.drawQueue[buffType];
-                shouldDrawBorder = shouldDrawBorder || modPlayer.goldenQueue[buffType];
+                shouldDrawBorder = modPlayer.goldenQueue[buffType];
                 shouldDrawBorder = shouldDrawBorder || modPlayer.alwaysPermanent[buffType];
                 shouldDrawBorder = shouldDrawBorder || modPlayer.neverPermanent[buffType];
             }
@@ -190,24 +189,29 @@ namespace PermaBuffs
 
                 #endregion
 
-
+                // The user has right clicked the buff to remove it.
                 if (tryRemoveBuff)
                 {
                     tryRemoveBuff &= BuffLoader.RightClick(buffType, buffSlotOnPlayer);
 
-                    // Never permanent buffs can always be deleted regardless of what another mod returns
-                    tryRemoveBuff = tryRemoveBuff || modPlayer.neverPermanent[buffType];
+                    // Modified buffs can always be deleted regardless of what another mod returns
+                    tryRemoveBuff = tryRemoveBuff || modPlayer.neverPermanent[buffType] || modPlayer.alwaysPermanent[buffType];
                 }
 
+                // The buff has passed all other mod checks to be removed or is a neverBuff
                 if (tryRemoveBuff)
                 {
                     Main.TryRemovingBuff(buffSlotOnPlayer, buffType);
 
                     // The buff was not deleted, force delete it
-                    if (modPlayer.neverPermanent[buffType] && buffType == player.buffType[buffSlotOnPlayer])
+                    if ((modPlayer.neverPermanent[buffType] || modPlayer.alwaysPermanent[buffType]) && buffType == player.buffType[buffSlotOnPlayer])
                     {
                         player.DelBuff(buffSlotOnPlayer);
                     }
+
+                    // Manually removed buffs should also be removed from the list of always permanent buffs. 
+                    // This is for the sake of convienience.
+                    modPlayer.alwaysPermanent[buffType] = false; 
                 }
             }
             // The player is not moused over the buff
