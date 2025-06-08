@@ -43,5 +43,11 @@ namespace PermaBuffs
         /// </summary>
         [DefaultValue(false)]
         public bool autoHideKeybindTooltips;
+
+        /// <summary>
+        /// When set to true, you can play with all the latest experimental features but might encounter more bugs. Please report any issues to my github or steam workshop page.
+        /// </summary>
+        [DefaultValue(false)]
+        public bool experimentalChanges;
     }
 }

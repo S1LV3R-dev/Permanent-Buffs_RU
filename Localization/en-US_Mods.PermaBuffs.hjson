@@ -30,6 +30,15 @@ Configs: {
 				'''
 			Label: Do Not Apply Buffs After Death Or Load
 		}
+
+		experimentalChanges : {
+			Tooltip:
+			'''
+			When set to true, you can use all the latest experimental features such as mod compatibility hooks, but you also may encounter more bugs.
+			Please report any issues you may encounter to my github or steam workshop page.
+			'''
+			Label: Use the latest experimental release
+		}
 	}
 }
 
