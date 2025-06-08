@@ -4,8 +4,6 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using System.Linq.Expressions;
-using System.Collections.Generic;
-using PermaBuffs;
 
 namespace PermaBuffs
 {
@@ -30,70 +28,50 @@ namespace PermaBuffs
     /// </summary>
     public partial class PermaBuffsPreBuffUpdateHooks
     {
-        // Commented out for next release because I'm not sure the code works or not.
         public static void CalamityRageMode(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
             buffType = CalamityHelper.rageBuffType;
             if (player == null)
                 return;
 
-            // NeverBuff is already properly applied -> permabuff logic needed
-            if (!isPermaBuffed)
-                return;
-
-            // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            CalamityHelper.SetPlayerInstance(player);
-
-            // Sets your rage to max rage every frame - this theoretically makes rage mode last forever
-            CalamityHelper.rage = CalamityHelper.maxRage;
+            if (isPermaBuffed)
+                CalamityHelper.RageMode(player);
         }
-
     }
 
-    // This class is only necessary because I am not a developer for Calamity. Reflection in my case is necessary to modify the required variables.
-    // If you are a calamity mod developer and wish to implement permabuffs compatibility, look at either partial class with the signature 'PermaBuffs Pre/Post BuffUpdateHooks' for a simpler method.
     public class CalamityHelper
     {
-        static Dictionary<string, FieldAccessor> accessors = new Dictionary<string, FieldAccessor>();
-
-        static bool fieldsInitialized = false;
-        public static float rage { get { return (float)accessors["modPlayer.rage"].Get(myPlayer); } set { accessors["modPlayer.rage"].Set(myPlayer, value); } }
-        public static float maxRage { get { return (float)accessors["modPlayer.maxRage"].Get(myPlayer); } set { accessors["modPlayer.maxRage"].Set(myPlayer, value); } }
-        static Player myPlayer;
-
-        // Cache for all buff type since you would otherwise be getting it with a slow tryFind every function call
-        static bool cachedTypes = false;
+        static FieldAccessor rageAcessor;
+        static FieldAccessor maxRageAcessor;
+        static int rageBuffTypeCache = -1;
         public static int rageBuffType
         {
             get
             {
-                if (!cachedTypes)
+                if (rageBuffTypeCache == -1)
                     CacheInternalTypes();
-                return rageBuffType;
+                return rageBuffTypeCache;
             }
-            private set { rageBuffType = value; }
         }
-        // Caches the buff types
+        // Caches the rage buff type once and then returns the cached value
         private static void CacheInternalTypes()
         {
             if (!ModContent.TryFind("CalamityMod", "RageMode", out ModBuff rageBuff))
-                rageBuffType = 0;
+                rageBuffTypeCache = 0;
             else
-                rageBuffType = rageBuff.Type;
-
-            cachedTypes = true;
+                rageBuffTypeCache = rageBuff.Type;
         }
-        // Must be called with player instance before acessing any calamity player instance variables
-        public static void SetPlayerInstance(Player player)
+        public static void RageMode(Player player)
         {
-            if (fieldsInitialized == false)
+            if (rageAcessor == null)
             {
                 Type calamityPlayerType = ModLoader.GetMod("CalamityMod").Code.GetType("CalamityMod.CalPlayer.CalamityPlayer");
-                accessors.Add("modPlayer.rage", new FieldAccessor(calamityPlayerType, "rage"));
-                accessors.Add("modPlayer.rageMax", new FieldAccessor(calamityPlayerType, "rageMax"));
+                rageAcessor = new FieldAccessor(calamityPlayerType, "rage");
+                maxRageAcessor = maxRageAcessor = new FieldAccessor(calamityPlayerType, "rageMax");
             }
 
-            myPlayer = player;
+            // Keeps the current rage at max so rage mode lasts forever
+            rageAcessor.Set(player, maxRageAcessor.Get(player));
         }
     }
 
@@ -127,21 +105,13 @@ namespace PermaBuffs
         /*
         public static void NeverBuffCurse(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
-            // Use the helper class to set the buffType
+        // Use the helper class to set the buffType
             buffType = TsorcRevampHelper.curseBuffType;
             if (player == null)
                 return;
 
-            // Custom logic only applies during neverbuff
-            if (isPermaBuffed)
-                return;
-
-            // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            TsorcRevampHelper.SetPlayerInstance(player);
-
-            // These booleans control whether any curse value is applied - set them to false if neverBuffed.
-            TsorcRevampHelper.curseActive = false;
-            TsorcRevampHelper.powerfulCurseActive = false;
+            if (!isPermaBuffed)
+                TsorcRevampHelper.SetCurse(player);
         }
         */
     }
@@ -151,15 +121,11 @@ namespace PermaBuffs
     // Its important that these helper classes are static so they can be used freely in the Post/PreBuffUpdateLoops
     public class TsorcRevampHelper
     {
-        static Dictionary<string, FieldAccessor> accessors = new Dictionary<string, FieldAccessor>();
-
-        static bool fieldsInitialized = false;
-        // These let you acess the variables within the other mod. They require an instance to access mod data by string. Must call SetOwner(Player) before use
-        public static bool curseActive { get { return (bool)accessors["modPlayer.curseActive"].Get(myPlayer); } set { accessors["modPlayer.curseActive"].Set(myPlayer, value); } }
-        public static bool powerfulCurseActive { get { return (bool)accessors["modPlayer.powerfulCurseActive"].Get(myPlayer); } set { accessors["modPlayer.powerfulCurseActive"].Set(myPlayer, value); } }
-        static Player myPlayer;
+        // These let you acess the variables within the other mod. They require an instance to access mod data by string.
+        static FieldAccessor curseAcessor;
+        static FieldAccessor powerfulCurseAcessor;
         // Cache for all buff type since you would otherwise be getting it with a slow tryFind every function call
-        static bool cachedTypes = false;
+        public static bool cachedTypes = false;
         // The buff type of the buff named Curse
         public static int curseBuffType
         {
@@ -170,7 +136,7 @@ namespace PermaBuffs
 
                 return curseBuffType;
             }
-            private set { curseBuffType = value; }
+            set { curseBuffType = value; }
         }
         // Caches types. Just use a series of Modcontent try find if statements if you're lazy
         private static void CacheInternals()
@@ -182,32 +148,30 @@ namespace PermaBuffs
 
             cachedTypes = true;
         }
-        // This function sets up the player accessors properly and also sets the instance.
-        // Must be called before using any accessors
-        public static void SetPlayerInstance(Player player)
+        // This function caches the two curse player member variables and set them to false so the buff isnt applied.
+        // This function is called if the buff is neverBuffed.
+        public static void SetCurse(Player player)
         {
-            // Only run this code once. The field acessors need to compile the first time.
-            if (fieldsInitialized == false)
+            if (curseAcessor == null)
             {
                 Type tsorcRevampPlayerType = ModLoader.GetMod("tsorcRevamp").Code.GetType("tsorcRevamp.Player.tsorcRevampPlayerUpdateLoops");
-
-                accessors.Add("modPlayer.curseActive", new FieldAccessor(tsorcRevampPlayerType, "CurseActive"));
-                accessors.Add("modPlayer.powerfulCurseActive", new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive"));
-
-                fieldsInitialized = true;
+                curseAcessor = new FieldAccessor(tsorcRevampPlayerType, "CurseActive");
+                powerfulCurseAcessor = powerfulCurseAcessor = new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive");
             }
-            // Dynamically set the referenced instance of the player.
-            myPlayer = player;
+
+            curseAcessor.Set(player, false);
+            powerfulCurseAcessor.Set(player, false);
         }
     }
 
     /// <summary>
     /// Courtesy of Darrel Lee on stack overflow - this class lets you access another mod's variables effeciently using Expression.compile() with reflection.
     /// </summary>
-    public class FieldAccessor
+    class FieldAccessor
     {
         private static readonly ParameterExpression fieldParameter = Expression.Parameter(typeof(object));
         private static readonly ParameterExpression ownerParameter = Expression.Parameter(typeof(object));
+
         public FieldAccessor(Type type, string fieldName)
         {
             var field = type.GetField(fieldName,
@@ -226,6 +190,7 @@ namespace PermaBuffs
                     Expression.Convert(fieldParameter, field.FieldType)),
                 ownerParameter, fieldParameter).Compile();
         }
+
         public Func<object, object> Get { get; }
         public Action<object, object> Set { get; }
     }
