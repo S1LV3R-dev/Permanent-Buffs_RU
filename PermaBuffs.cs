@@ -64,7 +64,7 @@ namespace PermaBuffs
                         {
                             // Only valid Delegates are added, thrown errors means an invalid function was passed through
                             throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, int, bool, out int).\n" +
-                                "Please look at the PermaBuffsHooks class ");
+                                "Please look at the PermaBuffsHooks class and BuffHook delegate to reference how to form an accepted method.");
                         }
                     }
                 }
