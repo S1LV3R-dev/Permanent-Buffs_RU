@@ -10,18 +10,20 @@ Neverbuffs are indicated by a Purple Border around the buff icon.
 
 Both Permabuffs and Neverbuffs can be toggled by hovering the mouse over the buff icon and pressing their respective keybinds.
 
-This mod should be compatible with most other mods and does not change any behaviour unless the config options are enabled. Some additional features are:
+This mod should be compatible with most other mod buff and does not change any behaviour unless the config options are enabled. Some additional features are:
 - Option to selectively apply death/save&quit persistence to station buffs, so you don't have to click the stations every time you respawn.
 - Option to selectively apply death/save&quit persistence to banners, so that they remain with you wherever you go once placed.
 - Option to disable visuals on affected buff icons.
 - Option to hide additional keybind tooltips once the keybinds are bound.
-- Option to disable death/save&quit persistence entirely
+- Option to disable death/save&quit persistence entirely.
 - PermaBuffing summons is now FULLY supported! As long as you keep the summoning item in your inventory and PermaBuff the icon, the mod will automatically fill all your summon slots! This works with mod summons too.
+- Option to enable experimental cross-mod functionality patches.
 
-**Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex: (Potion Sickness)
-Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
+**Disclaimer**: Depending on the buff in question, enabling/blocking/force deleting the buff using Perma/NeverBuff might not work fully. This is because certain buffs have their behaviour decided somewhere that isn't in Buff.Update
+This is the case with Potion Sickness (patched as of 1.6.1) and certain other modbuffs. Please report these exceptions to me through the steam workshop page or the github, so I can patch them.
 
 Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490291206
 
-Possible future changes: 
-- Any other suggestions/bugs as commented in Github or the Steam community workshop page
+If you've read this far, you might want to join the discord.
+You can ask about my mods, suggest any future changes, commission me to make a mod, report bugs, or just hang around and watch a coding stream.
+Discord: https://discord.gg/krZV4fCWqV
