@@ -16,6 +16,7 @@ using static PermaBuffs.PermaBuffsPlayer;
 using Terraria.UI.Chat;
 using Microsoft.Xna.Framework;
 using ReLogic.Graphics;
+using Terraria.ModLoader.Core;
 
 namespace PermaBuffs
 {
@@ -27,41 +28,47 @@ namespace PermaBuffs
         {
             preBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
             postBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
-            
-            Type hookClassType = typeof(PreBuffUpdateHooks);
 
-            foreach (var method in hookClassType.GetMethods())
+            foreach (Mod mod in ModLoader.Mods)
             {
-                try
+                foreach (Type hookClassType in AssemblyManager.GetLoadableTypes(mod.Code))
                 {
-                    BuffHook hook = method.CreateDelegate<BuffHook>();
-                    hook(null, 0, false, out int buffType);
+                    if (!(hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name || hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name))
+                        continue;
 
-                    if (buffType > 0 && buffType < BuffLoader.BuffCount)
-                        preBuffUpdateHooks[buffType] = hook;
-                }
-                catch
-                {
-                    // Only valid Delegates are added, thrown errors are to be expected from this code
-                }
-            }
+                    foreach (var method in hookClassType.GetMethods())
+                    {
+                        try
+                        {
+                            if (!(method.ReturnType == typeof(void)))
+                                continue;
 
-            hookClassType = typeof(PostBuffUpdateHooks);
+                            var methodParams = method.GetParameters();
 
-            foreach (var method in hookClassType.GetMethods())
-            {
-                try
-                {
-                    BuffHook hook = method.CreateDelegate<BuffHook>();
-                    hook(null, 0, false, out int buffType);
+                            if (methodParams.Length != 4)
+                                continue;
 
-                    if (buffType > 0 && buffType < BuffLoader.BuffCount) 
-                        postBuffUpdateHooks[buffType] = hook;
+                            // Function signature matches expected
+                            if (methodParams[0].ParameterType == typeof(Player) && methodParams[1].ParameterType == typeof(int) &&
+                                methodParams[2].ParameterType == typeof(bool))
+                            {
+
+                                BuffHook hook = method.CreateDelegate<BuffHook>();
+                                hook(null, 0, false, out int buffType);
+
+                                if (buffType > 0 && buffType < BuffLoader.BuffCount)
+                                    postBuffUpdateHooks[buffType] = hook;
+                            }
+                        }
+                        catch
+                        {
+                            // Only valid Delegates are added, thrown errors means an invalid function was passed through
+                            throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, int, bool, out int).\n" +
+                                "Please look at the PermaBuffsHooks class ");
+                        }
+                    }
                 }
-                catch
-                {
-                    // Only valid Delegates are added, thrown errors are to be expected from this code
-                }
+
             }
         }
         public override void Load()
