@@ -49,12 +49,12 @@ namespace PermaBuffs
             get
             {
                 if (rageBuffTypeCache == -1)
-                    CacheInternals();
+                    CacheInternalTypes();
                 return rageBuffTypeCache;
             }
         }
         // Caches the rage buff type once and then returns the cached value
-        private static void CacheInternals()
+        private static void CacheInternalTypes()
         {
             if (!ModContent.TryFind("CalamityMod", "RageMode", out ModBuff rageBuff))
                 rageBuffTypeCache = 0;
@@ -70,7 +70,7 @@ namespace PermaBuffs
                 maxRageAcessor = maxRageAcessor = new FieldAccessor(calamityPlayerType, "rageMax");
             }
 
-
+            // Keeps the current rage at max so rage mode lasts forever
             rageAcessor.Set(player, maxRageAcessor.Get(player));
         }
     }
