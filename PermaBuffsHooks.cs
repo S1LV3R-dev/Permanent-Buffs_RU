@@ -42,7 +42,8 @@ namespace PermaBuffs
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            CalamityHelper.SetPlayerInstance(player);
+            if (!CalamityHelper.SetPlayerInstance(player))
+                return; // There was an error setting up reflection
 
             // Sets your rage to max rage every frame - this theoretically makes rage mode last forever
             CalamityHelper.rage = CalamityHelper.maxRage;
@@ -90,7 +91,8 @@ namespace PermaBuffs
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            TsorcRevampHelper.SetPlayerInstance(player);
+            if (!TsorcRevampHelper.SetupPlayerInstance(player))
+                return; // There was an error getting the values using reflection
 
             // These booleans control whether any curse value is applied - set them to false if neverBuffed.
             TsorcRevampHelper.curseActive = false;
@@ -132,22 +134,45 @@ namespace PermaBuffs
                 cachedCurseBuffType = curseBuff.Type;
         }
         // This function sets up the player accessors properly and also sets the instance.
-        // Must be called before using any accessors
-        public static void SetPlayerInstance(Player player)
+        // Must be called before using any accessors. Returns whether or not it was sucessful.
+        public static bool SetupPlayerInstance(Player player)
         {
             // Only run this code once. The field acessors need to compile the first time.
             if (vars == null)
             {
+                string playerPath = "tsorcRevamp.Player.tsorcRevampPlayerUpdateLoops.tsorcRevampPlayer";
+                Type tsorcRevampPlayerType = ModLoader.GetMod("tsorcRevamp").Code.GetType(playerPath);
+
+                // The story of red cloud isnt loaded
+                if (tsorcRevampPlayerType == null)
+                    return false;
+
                 vars = new Dictionary<string, FieldAccessor>();
+                List<string> errors = new List<string>();
 
-                Type tsorcRevampPlayerType = ModLoader.GetMod("tsorcRevamp").Code.GetType("tsorcRevamp.Player.tsorcRevampPlayerUpdateLoops");
+                try { vars.Add("modPlayer.curseActive", new FieldAccessor(tsorcRevampPlayerType, "CurseActive")); }
+                catch { errors.Add("Could not find CurseActive within the class " + playerPath); }
+                try { vars.Add("modPlayer.powerfulCurseActive", new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive")); }
+                catch { errors.Add("Could not find powerfulCurseActive within the class " + playerPath); }
+                
+                if (errors.Count > 0) 
+                {
+                    Mod mod = ModLoader.GetMod("PermaBuffs");
+                    vars = null;
 
-                vars.Add("modPlayer.curseActive", new FieldAccessor(tsorcRevampPlayerType, "CurseActive"));
-                vars.Add("modPlayer.powerfulCurseActive", new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive"));
+                    foreach (string error in errors)
+                    {
+                        mod.Logger.Error(error);
+                    }
+
+                    return false;
+                }
             }
 
             // Dynamically set the referenced instance of the player.
             myPlayer = player;
+
+            return true;
         }
     }
 
@@ -181,19 +206,41 @@ namespace PermaBuffs
                 rageBuffTypeCache = rageBuff.Type;
         }
         // Must be called with player instance before acessing any calamity player instance variables
-        public static void SetPlayerInstance(Player player)
+        public static bool SetPlayerInstance(Player player)
         {
             if (vars == null)
             {
-                vars = new Dictionary<string, FieldAccessor>();
-
+                string playerPath = "CalamityMod.CalPlayer.CalamityPlayer";
                 Type calamityPlayerType = ModLoader.GetMod("CalamityMod").Code.GetType("CalamityMod.CalPlayer.CalamityPlayer");
+                
+                // Calamity mod isnt loaded
+                if (calamityPlayerType == null)
+                    return false;
 
-                vars.Add("modPlayer.rage", new FieldAccessor(calamityPlayerType, "rage"));
-                vars.Add("modPlayer.rageMax", new FieldAccessor(calamityPlayerType, "rageMax"));
+                vars = new Dictionary<string, FieldAccessor>();
+                List<string> errors = new List<string>();
+
+                try { vars.Add("modPlayer.rage", new FieldAccessor(calamityPlayerType, "rage")); }
+                catch { errors.Add("Could not find rage within the class " + playerPath); }
+                try { vars.Add("modPlayer.rageMax", new FieldAccessor(calamityPlayerType, "rageMax")); }
+                catch { errors.Add("Could not find rageMax within the class " + playerPath); }
+
+                if (errors.Count > 0)
+                {
+                    Mod mod = ModLoader.GetMod("PermaBuffs");
+                    vars = null;
+
+                    foreach (string error in errors)
+                    {
+                        mod.Logger.Error(error);
+                    }
+
+                    return false;
+                }
             }
 
             myPlayer = player;
+            return true;
         }
     }
 

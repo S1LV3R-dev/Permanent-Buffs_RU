@@ -84,6 +84,14 @@ namespace PermaBuffs
             // Make never buffs unable to apply their effects
             Terraria.On_Player.UpdateBuffs += UpdateBuffs;
 
+            // Dunno how this will affect the game so its experimental...
+            // Theoretically since it stops the game from checking if a neverbuff is there, code that relies on the debuff outside buff.update will operate as if the buff isnt there.
+            if (PermaBuffsConfig.instance.experimentalChanges)
+            {
+                Terraria.On_Player.HasBuff += NeverBuffsHiddenPatchHasBuff;
+                Terraria.On_Player.FindBuffIndex += NeverBuffsHiddenPatchFindBuffIndex; 
+            }
+
             // Banner compatibility hooks.
             // The has banner hook is bugged out to only occasionally activate when the player is hit and nowhere else
             // Meaning I had to instead hook everything that applied the hasBannerBuff hook to my code...
@@ -94,6 +102,21 @@ namespace PermaBuffs
 
             PermaBuffsPlayer.alwaysPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Always Permanent", Microsoft.Xna.Framework.Input.Keys.P);
             PermaBuffsPlayer.neverPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Never Permanent", Microsoft.Xna.Framework.Input.Keys.N);
+        }
+
+        internal static int NeverBuffsHiddenPatchFindBuffIndex(Terraria.On_Player.orig_FindBuffIndex orig, Player player, int type)
+        {
+            if (player.GetModPlayer<PermaBuffsPlayer>().neverPermanent[type])
+                return -1;
+
+            return orig(player, type);
+        }
+        internal static bool NeverBuffsHiddenPatchHasBuff(Terraria.On_Player.orig_HasBuff orig, Player player, int type)
+        {
+            if (player.GetModPlayer<PermaBuffsPlayer>().neverPermanent[type])
+                return false;
+            
+            return orig(player, type);
         }
 
         // This is a modified version of the original DrawBuffIcons function.

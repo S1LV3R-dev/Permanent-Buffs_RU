@@ -19,5 +19,5 @@ This mod should be compatible with most other mods and does not change any behav
 All the code is also on github if you want to edit the mod for your own preferences or take a look at how I coded anything.
 Github Link: https://github.com/linklight2/Permanent-Buffs
 
-**Disclaimer**: Depending on the buff in question, blocking/force deleting the buff using NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update. Ex: (Potion Sickness)
-Still I don't have a better way of implementing this in mind because any true solution would have be made on a case by case basis.
+**Disclaimer**: Depending on the buff in question, enabling/blocking/force deleting the buff using Perma/NeverBuff might not work fully. This is because certain buffs have their behaviour coded somewhere that isn't in Buff.Update
+This is the case with Potion Sickness (patched as of 1.6.1) and certain other modbuffs. Please report these exceptions to me through the steam workshop page or the github so I can patch them.
