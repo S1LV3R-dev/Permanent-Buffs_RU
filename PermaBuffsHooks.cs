@@ -4,6 +4,8 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using System.Linq.Expressions;
+using System.Collections.Generic;
+using PermaBuffs;
 
 namespace PermaBuffs
 {
@@ -28,51 +30,24 @@ namespace PermaBuffs
     /// </summary>
     public partial class PermaBuffsPreBuffUpdateHooks
     {
+        // Commented out for next release because I'm not sure the code works or not.
         public static void CalamityRageMode(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
-            buffType = CalamityHelper.rageBuffType;
+            buffType = PermaBuffsConfig.instance.experimentalChanges ? CalamityHelper.rageBuffType : 0;
             if (player == null)
                 return;
 
-            if (isPermaBuffed)
-                CalamityHelper.RageMode(player);
-        }
-    }
+            // NeverBuff is already properly applied -> permabuff logic needed
+            if (!isPermaBuffed)
+                return;
 
-    public class CalamityHelper
-    {
-        static FieldAccessor rageAcessor;
-        static FieldAccessor maxRageAcessor;
-        static int rageBuffTypeCache = -1;
-        public static int rageBuffType
-        {
-            get
-            {
-                if (rageBuffTypeCache == -1)
-                    CacheInternals();
-                return rageBuffTypeCache;
-            }
-        }
-        // Caches the rage buff type once and then returns the cached value
-        private static void CacheInternals()
-        {
-            if (!ModContent.TryFind("CalamityMod", "RageMode", out ModBuff rageBuff))
-                rageBuffTypeCache = 0;
-            else
-                rageBuffTypeCache = rageBuff.Type;
-        }
-        public static void RageMode(Player player)
-        {
-            if (rageAcessor == null)
-            {
-                Type calamityPlayerType = ModLoader.GetMod("CalamityMod").Code.GetType("CalamityMod.CalPlayer.CalamityPlayer");
-                rageAcessor = new FieldAccessor(calamityPlayerType, "rage");
-                maxRageAcessor = maxRageAcessor = new FieldAccessor(calamityPlayerType, "rageMax");
-            }
+            // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
+            CalamityHelper.SetPlayerInstance(player);
 
-
-            rageAcessor.Set(player, maxRageAcessor.Get(player));
+            // Sets your rage to max rage every frame - this theoretically makes rage mode last forever
+            CalamityHelper.rage = CalamityHelper.maxRage;
         }
+
     }
 
     /// <summary>
@@ -101,19 +76,26 @@ namespace PermaBuffs
         }
         
         // This function is now present in the tsorc revamp code. But this is how I'd do it if I wasn't a dev for the mod.
-        // Example Function:
-        /*
+        // This will be commented out in the next release of tsorcRevamp
         public static void NeverBuffCurse(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
-        // Use the helper class to set the buffType
-            buffType = TsorcRevampHelper.curseBuffType;
+            // Use the helper class to set the buffType
+            buffType = PermaBuffsConfig.instance.experimentalChanges ? TsorcRevampHelper.curseBuffType : 0;
+
             if (player == null)
                 return;
 
-            if (!isPermaBuffed)
-                TsorcRevampHelper.SetCurse(player);
+            // Custom logic only applies during neverbuff
+            if (isPermaBuffed)
+                return;
+
+            // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
+            TsorcRevampHelper.SetPlayerInstance(player);
+
+            // These booleans control whether any curse value is applied - set them to false if neverBuffed.
+            TsorcRevampHelper.curseActive = false;
+            TsorcRevampHelper.powerfulCurseActive = false;
         }
-        */
     }
 
     // I'm a mod for this one so technically this class isn't needed - leaving it here as an example instead for possible future helper class patches for other mods
@@ -121,53 +103,104 @@ namespace PermaBuffs
     // Its important that these helper classes are static so they can be used freely in the Post/PreBuffUpdateLoops
     public class TsorcRevampHelper
     {
-        // These let you acess the variables within the other mod. They require an instance to access mod data by string.
-        static FieldAccessor curseAcessor;
-        static FieldAccessor powerfulCurseAcessor;
+        static Dictionary<string, FieldAccessor> vars;
+
+        // These let you acess the variables within the other mod. They require an instance to access mod data by string. Must call SetOwner(Player) before use
+        public static bool curseActive { get { return (bool)vars["modPlayer.curseActive"].Get(myPlayer); } set { vars["modPlayer.curseActive"].Set(myPlayer, value); } }
+        public static bool powerfulCurseActive { get { return (bool)vars["modPlayer.powerfulCurseActive"].Get(myPlayer); } set { vars["modPlayer.powerfulCurseActive"].Set(myPlayer, value); } }
+        static Player myPlayer;
         // Cache for all buff type since you would otherwise be getting it with a slow tryFind every function call
-        public static bool cachedTypes = false;
+        static int cachedCurseBuffType = -1;
         // The buff type of the buff named Curse
         public static int curseBuffType
         {
             get
             {
-                if (!cachedTypes)
+                if (cachedCurseBuffType == -1)
                     CacheInternals();
 
-                return curseBuffType;
+                return cachedCurseBuffType;
             }
-            set { curseBuffType = value; }
+            private set { cachedCurseBuffType = value; }
         }
         // Caches types. Just use a series of Modcontent try find if statements if you're lazy
         private static void CacheInternals()
         {
             if (!ModContent.TryFind("tsorcRevamp", "Curse", out ModBuff curseBuff))
-                curseBuffType = 0;
+                cachedCurseBuffType = 0;
             else
-                curseBuffType = curseBuff.Type;
-
-            cachedTypes = true;
+                cachedCurseBuffType = curseBuff.Type;
         }
-        // This function caches the two curse player member variables and set them to false so the buff isnt applied.
-        // This function is called if the buff is neverBuffed.
-        public static void SetCurse(Player player)
+        // This function sets up the player accessors properly and also sets the instance.
+        // Must be called before using any accessors
+        public static void SetPlayerInstance(Player player)
         {
-            if (curseAcessor == null)
+            // Only run this code once. The field acessors need to compile the first time.
+            if (vars == null)
             {
+                vars = new Dictionary<string, FieldAccessor>();
+
                 Type tsorcRevampPlayerType = ModLoader.GetMod("tsorcRevamp").Code.GetType("tsorcRevamp.Player.tsorcRevampPlayerUpdateLoops");
-                curseAcessor = new FieldAccessor(tsorcRevampPlayerType, "CurseActive");
-                powerfulCurseAcessor = powerfulCurseAcessor = new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive");
+
+                vars.Add("modPlayer.curseActive", new FieldAccessor(tsorcRevampPlayerType, "CurseActive"));
+                vars.Add("modPlayer.powerfulCurseActive", new FieldAccessor(tsorcRevampPlayerType, "powerfulCurseActive"));
             }
 
-            curseAcessor.Set(player, false);
-            powerfulCurseAcessor.Set(player, false);
+            // Dynamically set the referenced instance of the player.
+            myPlayer = player;
+        }
+    }
+
+    // This class is only necessary because I am not a developer for Calamity. Reflection in my case is necessary to modify the required variables.
+    // If you are a calamity mod developer and wish to implement permabuffs compatibility, look at either partial class with the signature 'PermaBuffs Pre/Post BuffUpdateHooks' for a simpler method.
+    public class CalamityHelper
+    {
+        static Dictionary<string, FieldAccessor> vars;
+        public static float rage { get { return (float)vars["modPlayer.rage"].Get(myPlayer); } set { vars["modPlayer.rage"].Set(myPlayer, value); } }
+        public static float maxRage { get { return (float)vars["modPlayer.rageMax"].Get(myPlayer); } set { vars["modPlayer.rageMax"].Set(myPlayer, value); } }
+        static Player myPlayer;
+
+        // Cache for all buff type since you would otherwise be getting it with a slow tryFind every function call
+        static int rageBuffTypeCache = -1;
+        public static int rageBuffType
+        {
+            get
+            {
+                if (rageBuffTypeCache == -1)
+                    CacheInternalTypes();
+                return rageBuffTypeCache;
+            }
+            private set { rageBuffTypeCache = value; }
+        }
+        // Caches the rage buff type once and then returns the cached value
+        private static void CacheInternalTypes()
+        {
+            if (!ModContent.TryFind("CalamityMod", "RageMode", out ModBuff rageBuff))
+                rageBuffTypeCache = 0;
+            else
+                rageBuffTypeCache = rageBuff.Type;
+        }
+        // Must be called with player instance before acessing any calamity player instance variables
+        public static void SetPlayerInstance(Player player)
+        {
+            if (vars == null)
+            {
+                vars = new Dictionary<string, FieldAccessor>();
+
+                Type calamityPlayerType = ModLoader.GetMod("CalamityMod").Code.GetType("CalamityMod.CalPlayer.CalamityPlayer");
+
+                vars.Add("modPlayer.rage", new FieldAccessor(calamityPlayerType, "rage"));
+                vars.Add("modPlayer.rageMax", new FieldAccessor(calamityPlayerType, "rageMax"));
+            }
+
+            myPlayer = player;
         }
     }
 
     /// <summary>
     /// Courtesy of Darrel Lee on stack overflow - this class lets you access another mod's variables effeciently using Expression.compile() with reflection.
     /// </summary>
-    class FieldAccessor
+    public class FieldAccessor
     {
         private static readonly ParameterExpression fieldParameter = Expression.Parameter(typeof(object));
         private static readonly ParameterExpression ownerParameter = Expression.Parameter(typeof(object));

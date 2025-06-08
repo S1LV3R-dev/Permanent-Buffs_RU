@@ -45,7 +45,7 @@ namespace PermaBuffs
         public bool autoHideKeybindTooltips;
 
         /// <summary>
-        /// When set to true, you can play with all the latest experimental features but might encounter more bugs. Please report any issues to my github or steam workshop page.
+        /// When set to true, you can play with experimental mod compatibility features powered by reflection but might encounter more bugs. Please report any issues to my github or steam workshop page.
         /// </summary>
         [DefaultValue(false)]
         public bool experimentalChanges;

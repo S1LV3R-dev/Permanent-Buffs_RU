@@ -28,9 +28,14 @@ namespace PermaBuffs
         {
             preBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
             postBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
+            var config = PermaBuffsConfig.instance;
 
             foreach (Mod mod in ModLoader.Mods)
             {
+                // Only allow other mod edits if the user has experimental changes enabled.
+                if (!(mod.Name == "PermaBuffs" || config.experimentalChanges))
+                    continue;
+
                 foreach (Type hookClassType in AssemblyManager.GetLoadableTypes(mod.Code))
                 {
                     if (!(hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name || hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name))
@@ -64,7 +69,7 @@ namespace PermaBuffs
                         {
                             // Only valid Delegates are added, thrown errors means an invalid function was passed through
                             throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, int, bool, out int).\n" +
-                                "Please look at the PermaBuffsHooks class ");
+                                "Please look at the PermaBuffsHooks class and BuffHook delegate to reference how to form an accepted method.");
                         }
                     }
                 }
