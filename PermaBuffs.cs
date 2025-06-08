@@ -21,6 +21,49 @@ namespace PermaBuffs
 {
     public class PermaBuffs : Mod
     {
+        public static BuffHook[] postBuffUpdateHooks { get; internal set; }
+        public static BuffHook[] preBuffUpdateHooks { get; internal set; }
+        public override void PostSetupContent()
+        {
+            preBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
+            postBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
+            
+            Type hookClassType = typeof(PreBuffUpdateHooks);
+
+            foreach (var method in hookClassType.GetMethods())
+            {
+                try
+                {
+                    BuffHook hook = method.CreateDelegate<BuffHook>();
+                    hook(null, 0, false, out int buffType);
+
+                    if (buffType > 0 && buffType < BuffLoader.BuffCount)
+                        preBuffUpdateHooks[buffType] = hook;
+                }
+                catch
+                {
+                    // Only valid Delegates are added, thrown errors are to be expected from this code
+                }
+            }
+
+            hookClassType = typeof(PostBuffUpdateHooks);
+
+            foreach (var method in hookClassType.GetMethods())
+            {
+                try
+                {
+                    BuffHook hook = method.CreateDelegate<BuffHook>();
+                    hook(null, 0, false, out int buffType);
+
+                    if (buffType > 0 && buffType < BuffLoader.BuffCount) 
+                        postBuffUpdateHooks[buffType] = hook;
+                }
+                catch
+                {
+                    // Only valid Delegates are added, thrown errors are to be expected from this code
+                }
+            }
+        }
         public override void Load()
         {
             // Sets my custom function to be used instead of the default

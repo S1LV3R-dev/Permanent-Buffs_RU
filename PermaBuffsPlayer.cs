@@ -198,6 +198,17 @@ namespace PermaBuffs
                     buff.AddBuffToPlayer(this, player);
                 }
             }
+
+            // Apply hooks 
+            for (int buffSlot = 0; buffSlot < Player.MaxBuffs; buffSlot++)
+            {
+                BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
+
+                if (buff.isActive && (alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.preBuffUpdateHooks[buff.type] != null)
+                {
+                    PermaBuffs.preBuffUpdateHooks[buff.type](player, buffSlot, alwaysPermanent[buff.type], out int type);
+                }
+            }
         }
 
         /// <summary>
@@ -212,9 +223,9 @@ namespace PermaBuffs
             Player player = Main.LocalPlayer;
             bool bannersSet = false;
 
-            for (int i = 0; i < Player.MaxBuffs; i++)
+            for (int buffSlot = 0; buffSlot < Player.MaxBuffs; buffSlot++)
             {
-                BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
+                BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
 
                 if (!buff.isActive)
                     continue;
@@ -232,6 +243,12 @@ namespace PermaBuffs
 
                     bannersNeedRefresh = true;
                     bannersSet = true;
+                }
+
+                // Call hooks
+                if ((alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.postBuffUpdateHooks[buff.type] != null)
+                {
+                    PermaBuffs.postBuffUpdateHooks[buff.type](player, buffSlot, alwaysPermanent[buff.type], out int type);
                 }
             }
 
