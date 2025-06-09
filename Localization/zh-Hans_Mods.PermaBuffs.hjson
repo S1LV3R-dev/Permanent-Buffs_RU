@@ -19,7 +19,7 @@ Configs: {
 				被设置为永久生效的增益效果，图标周围会有[c/fff200:金色边框]
 				被设置为永不生效的增益效果，图标周围会有[c/a739de:紫色边框]
 				'''
-			Label: 描绘增益边框
+			Label: 绘制增益边框
 		}
 
 		autoHideKeybindTooltips: {
@@ -31,6 +31,7 @@ Configs: {
 				'''
 			Label: 自动隐藏按键提示
 		}
+
 		doNotApplyBuffsAfterDeathOrLoad: {
 			Tooltip:
 				'''
@@ -60,7 +61,7 @@ GlobalBuff: {
 		Tooltip:
 			'''
 			按 [c/ff0000:{0}] 键保存为 [c/ffff00:永久生效增益]
-			[c/ffff00:永久生效] 将一直保持 [c/ffff00:永久生效]
+			[c/ffff00:永久生效增益] 将一直保持 [c/ffff00:永久生效]
 			'''
 	}
 
@@ -108,5 +109,3 @@ Keybinds: {
 
 	NotBound: ": <未绑定，请在控键设置中进行绑定>"
 }
-	
-
