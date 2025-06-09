@@ -27,3 +27,6 @@ Steam Workshop Page: https://steamcommunity.com/sharedfiles/filedetails/?id=3490
 If you've read this far, you might want to join the discord.
 You can ask about my mods, suggest any future changes, commission me to make a mod, report bugs, or just hang around and watch a coding stream.
 Discord: https://discord.gg/krZV4fCWqV
+
+Special thanks to all others who have helped out with the mod! 
+- 成为睾玩多打泡 provided a Chinese translation

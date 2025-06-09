@@ -32,3 +32,6 @@ Discord: https://discord.gg/krZV4fCWqV
 
 All the code is also on github if you want to edit the mod for your own preferences or take a look at how I coded anything.
 Github Link: https://github.com/linklight2/Permanent-Buffs
+
+Special thanks to all others who have helped out with the mod! 
+- 成为睾玩多打泡 provided a Chinese translation

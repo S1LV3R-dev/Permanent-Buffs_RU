@@ -19,3 +19,6 @@ This mod should be compatible with most other mod buff and does not change any b
 
 **Disclaimer**: Depending on the buff in question, enabling/blocking/force deleting the buff using Perma/NeverBuff might not work fully. This is because certain buffs have their behaviour decided somewhere that isn't in Buff.Update
 This is the case with Potion Sickness (patched as of 1.6.1) and certain other modbuffs. Please report these exceptions to me through discord/github, so I can patch them.
+
+Special thanks to all others who have helped out with the mod! 
+- 成为睾玩多打泡 provided a Chinese translation
