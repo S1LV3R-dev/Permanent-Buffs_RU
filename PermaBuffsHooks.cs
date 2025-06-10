@@ -7,7 +7,6 @@ using System.Linq.Expressions;
 using System.Collections.Generic;
 using PermaBuffs;
 using Terraria.ModLoader.Core;
-using tsorcRevamp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Terraria.Map;
@@ -36,8 +35,7 @@ namespace PermaBuffs
     /// </summary>
     public partial class PermaBuffsPreBuffUpdateHooks
     {
-        // Commented out for next release because I'm not sure the code works or not.
-        public static void CalamityRageMode(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void CalamityPermaRageMode(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.rageBuffType : 0;
             if (player == null)
@@ -48,11 +46,24 @@ namespace PermaBuffs
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            if (!PrivateAccess.TrySetupPlayerInstances(player, "CalamityMod"))
+            if (!PrivateAccess.TrySetupPlayerInstances(player, PrivateAccess.Calamity.ModName))
                 return; // There was an error setting up reflection
 
             // Sets your rage to max rage every frame - this theoretically makes rage mode last forever
             PrivateAccess.Calamity.rage = PrivateAccess.Calamity.maxRage;
+        }
+
+        public static void CalamityPermaAquaticHeartBuff(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        {
+            buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.aquaticHeartBuffType : 0;
+            if (player == null) 
+                return;
+
+            if (!isPermaBuffed || !PrivateAccess.TrySetupPlayerInstances(player, PrivateAccess.Calamity.ModName))
+                return;
+
+            // This was originally controlled by the accessory, now if it's permabuffed it will remain true
+            PrivateAccess.Calamity.aquaticHeart = true;
         }
     }
 
@@ -84,7 +95,7 @@ namespace PermaBuffs
         public static void NeverBuffCurse(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
             // Use the helper class to set the buffType
-            buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.TsorcRevamp.curseBuffType : 0;
+            buffType = PrivateAccess.TsorcRevamp.curseBuffType;
 
             if (player == null)
                 return;
@@ -94,7 +105,7 @@ namespace PermaBuffs
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            if (!PrivateAccess.TrySetupPlayerInstances(player, "tsorcRevamp"))
+            if (!PrivateAccess.TrySetupPlayerInstances(player, PrivateAccess.TsorcRevamp.ModName))
                 return; // There was an error getting the values using reflection
 
             PrivateAccess.TsorcRevamp.curseActive = false;
@@ -102,7 +113,7 @@ namespace PermaBuffs
         public static void NeverBuffPowerfulCurse(Player player, int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
         {
             // Use the helper class to set the buffType
-            buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.TsorcRevamp.powerfulCurseBuffType : 0;
+            buffType = PrivateAccess.TsorcRevamp.powerfulCurseBuffType;
 
             if (player == null)
                 return;
@@ -112,7 +123,7 @@ namespace PermaBuffs
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
-            if (!PrivateAccess.TrySetupPlayerInstances(player, "tsorcRevamp"))
+            if (!PrivateAccess.TrySetupPlayerInstances(player, PrivateAccess.TsorcRevamp.ModName))
                 return; // There was an error getting the values using reflection
 
             PrivateAccess.TsorcRevamp.powerfulCurseActive = false; 
@@ -124,14 +135,19 @@ namespace PermaBuffs
     // Its important that this helper class is static so it can be used freely in the Post/PreBuffUpdateLoops
     public class PrivateAccess
     {
+        internal const string keyModPlayerArray = "modPlayers";
         internal static Dictionary<string, FieldAccessor> vars;
         // I don't need to have this class since I'm a dev for tsorcRevamp, but the next mod update hasn't been pushed yet so...
         // I'll leave it here until the next update.
         public class TsorcRevamp
         {
+            public const string ModName = "tsorcRevamp";
+            internal const string playerClass = "tsorcRevampPlayer";
             // These let you acess the variables within the other mod. They require an instance to access mod data by string. Must call SetupPlayerInstance(Player) before use
-            public static bool curseActive { get { return (bool)vars["modPlayer.curseActive"].Get(myPlayer); } set { vars["modPlayer.curseActive"].Set(myPlayer, value); } }
-            public static bool powerfulCurseActive { get { return (bool)vars["modPlayer.powerfulCurseActive"].Get(myPlayer); } set { vars["modPlayer.powerfulCurseActive"].Set(myPlayer, value); } }
+            internal const string keyCurseActive = "CurseActive";
+            internal const string keyPowerfulCurseActive = "powerfulCurseActive";
+            public static bool curseActive { get { return (bool)vars[keyCurseActive].Get(myPlayer); } set { vars[keyCurseActive].Set(myPlayer, value); } }
+            public static bool powerfulCurseActive { get { return (bool)vars[keyPowerfulCurseActive].Get(myPlayer); } set { vars[keyPowerfulCurseActive].Set(myPlayer, value); } }
             internal static ModPlayer myPlayer;
             internal static Type playerType;
             internal static int cachedCurseBuffType = -1;
@@ -161,11 +177,24 @@ namespace PermaBuffs
         }
         public class Calamity
         {
-            public static float rage { get { return (float)vars["modPlayer.rage"].Get(myPlayer); } set { vars["modPlayer.rage"].Set(myPlayer, value); } }
-            public static float maxRage { get { return (float)vars["modPlayer.rageMax"].Get(myPlayer); } set { vars["modPlayer.rageMax"].Set(myPlayer, value); } }
+            public const string ModName = "CalamityMod";
+            internal const string playerClass = "CalamityPlayer";
+
+            internal const string keyRage = "rage";
+            internal const string keyRageMax = "rageMax";
+            internal const string keyAquaticHeart = "aquaticHeart";
+            internal const string keyHasteLevel = "hasteLevel";
+            public static float rage { get { return (float)vars[keyRage].Get(myPlayer); } set { vars[keyRage].Set(myPlayer, value); } }
+            public static float maxRage { get { return (float)vars[keyRageMax].Get(myPlayer); } set { vars[keyRageMax].Set(myPlayer, value); } }
+            public static bool aquaticHeart { get { return (bool)vars[keyAquaticHeart].Get(myPlayer); } set { vars[keyAquaticHeart].Set(myPlayer, value); } }
+            public static int hasteLevel { get { return (int)vars[keyHasteLevel].Get(myPlayer); } set { vars[keyHasteLevel].Set(myPlayer, value); } }
+
             internal static ModPlayer myPlayer;
             internal static Type playerType;
+
             internal static int rageBuffTypeCache = -1;
+            internal static int aquaticHeartBuffTypeCache = -1;
+            internal static int hasteBuffTypeCache = -1;
             public static int rageBuffType
             {
                 get
@@ -176,7 +205,26 @@ namespace PermaBuffs
                 }
                 private set { rageBuffTypeCache = value; }
             }
-        }
+            public static int aquaticHeartBuffType
+            {
+                get
+                {
+                    if (aquaticHeartBuffTypeCache == -1)
+                        CacheInternalBuffTypes();
+                    return aquaticHeartBuffTypeCache;
+                }
+                private set { aquaticHeartBuffTypeCache = value; }
+            }
+            public static int hasteBuffType
+            {
+                get
+                {
+                    if (hasteBuffTypeCache == -1)
+                        CacheInternalBuffTypes();
+                    return aquaticHeartBuffTypeCache;
+                }
+                private set { aquaticHeartBuffTypeCache = value; }
+            }
 
         // This function sets up the player accessors properly and also sets the instance.
         // Must be called before using any accessors. Returns whether or not it was sucessful.
@@ -189,40 +237,38 @@ namespace PermaBuffs
                 vars = new Dictionary<string, FieldAccessor>();
 
                 // This is needed to get any mod specific variables, if it fails just return.
-                try { vars.Add("playerArr", new FieldAccessor(typeof(Player), "modPlayers")); }
+                try { vars.Add(keyModPlayerArray, new FieldAccessor(typeof(Player), keyModPlayerArray)); }
                 catch { vars = null; return false; }
 
                 // Set up the field accessors of the supported mods. 
                 // Set mod access keys returns null if the mod isn't loaded.
-                TsorcRevamp.playerType = SetModAccessKeys("tsorcRevamp", "tsorcRevampPlayer",
-                    ["modPlayer.curseActive", "modPlayer.powerfulCurseActive"],
-                    ["CurseActive", "powerfulCurseActive"]
+                TsorcRevamp.playerType = SetModAccessKeys(TsorcRevamp.ModName, TsorcRevamp.playerClass,
+                    [TsorcRevamp.keyCurseActive, TsorcRevamp.keyPowerfulCurseActive]
                     );
 
-                Calamity.playerType = SetModAccessKeys("CalamityMod", "CalamityPlayer",
-                    ["modPlayer.rage", "modPlayer.rageMax"],
-                    ["rage", "rageMax"]
+                Calamity.playerType = SetModAccessKeys(Calamity.ModName, Calamity.playerClass,
+                    [Calamity.keyRage, Calamity.keyRageMax, Calamity.keyAquaticHeart]
                     );
             }
 
             int modPlayerIndex;
 
-            if (modName == "tsorcRevamp")
+            if (modName == TsorcRevamp.ModName)
             {
                 try
                 {
                     modPlayerIndex = GetPlayerIndex(player, TsorcRevamp.playerType);
-                    TsorcRevamp.myPlayer = ((ModPlayer[])vars["playerArr"].Get(player))[modPlayerIndex];
+                    TsorcRevamp.myPlayer = ((ModPlayer[])vars[keyModPlayerArray].Get(player))[modPlayerIndex];
                     return true;
                 }
                 catch { return false; }
             }
-            else if (modName == "CalamityMod")
+            else if (modName == Calamity.ModName)
             {
                 try
                 {
                     modPlayerIndex = GetPlayerIndex(player, Calamity.playerType);
-                    Calamity.myPlayer = ((ModPlayer[])vars["playerArr"].Get(player))[modPlayerIndex];
+                    Calamity.myPlayer = ((ModPlayer[])vars[keyModPlayerArray].Get(player))[modPlayerIndex];
                     return true;
                 }
                 catch { return false; }
@@ -235,25 +281,30 @@ namespace PermaBuffs
         // Called when any buffType is read for the first time
         private static void CacheInternalBuffTypes()
         {
-            if (!ModContent.TryFind("tsorcRevamp", "Curse", out ModBuff curseBuff))
+            if (!ModContent.TryFind(TsorcRevamp.ModName, "Curse", out ModBuff curseBuff))
                 TsorcRevamp.cachedCurseBuffType = 0;
             else
                 TsorcRevamp.cachedCurseBuffType = curseBuff.Type;
 
-            if (!ModContent.TryFind("tsorcRevamp", "PowerfulCurse", out ModBuff powerfulCurseBuff))
+            if (!ModContent.TryFind(TsorcRevamp.ModName, "PowerfulCurse", out ModBuff powerfulCurseBuff))
                 TsorcRevamp.cachedPowerfulCurseBuffType = 0;
             else
                 TsorcRevamp.cachedPowerfulCurseBuffType = powerfulCurseBuff.Type;
 
-            if (!ModContent.TryFind("CalamityMod", "RageMode", out ModBuff rageBuff))
+            if (!ModContent.TryFind(Calamity.ModName, "RageMode", out ModBuff rageBuff))
                 Calamity.rageBuffTypeCache = 0;
             else
                 Calamity.rageBuffTypeCache = rageBuff.Type;
+
+            if (!ModContent.TryFind(Calamity.ModName, "AquaticHeartBuff", out ModBuff auqaticHeartBuff))
+                Calamity.aquaticHeartBuffTypeCache = 0;
+            else
+                Calamity.aquaticHeartBuffTypeCache = auqaticHeartBuff.Type;
         }
 
         // Called by SetupPlayer instance with different mods.
         // Sets up the accessors properly so they can be quickly used to get private variables.
-        private static Type SetModAccessKeys(string modName, string classTypeStr, string[] variableNames, string[] accessorKeys)
+        private static Type SetModAccessKeys(string modName, string classTypeStr, string[] accessorKeys)
         {
             // If the mod didn't load return null
             if (!ModLoader.TryGetMod(modName, out Mod mod))
@@ -267,15 +318,13 @@ namespace PermaBuffs
 
                 List<string> errors = new List<string>();
 
-                for (int i = 0; i < variableNames.Length && i < accessorKeys.Length; i++)
+                for (int i = 0; i < accessorKeys.Length; i++)
                 {
-                    // This is what it's called in my code
-                    string name = variableNames[i];
                     // This is what it's called in the mod assembly
                     string accessKey = accessorKeys[i];
 
-                    try { vars.Add(name, new FieldAccessor(pendingType, accessKey)); }
-                    catch { errors.Add("Could not find " + name + " within the loaded " + classTypeStr + " type."); }
+                    try { vars.Add(accessKey, new FieldAccessor(pendingType, accessKey)); }
+                    catch { errors.Add("Could not find " + accessKey + " within the loaded " + classTypeStr + " type."); }
                 }
 
                 // There was an exception, log it and throw out the bad keys
@@ -283,7 +332,7 @@ namespace PermaBuffs
                 {
                     var logger = ModLoader.GetMod("PermaBuffs").Logger;
                     foreach (string error in errors) { logger.Error(error); }
-                    foreach (string name in variableNames) { vars.Remove(name); }
+                    foreach (string name in accessorKeys) { vars.Remove(name); }
                 }
                 else
                 {
@@ -307,7 +356,7 @@ namespace PermaBuffs
 
             // Dynamically set the referenced instance of the player.
             // Done by acessing the private array attached to each player instance containing their ModPlayer variants
-            foreach (ModPlayer p in (ModPlayer[])vars["playerArr"].Get(player))
+            foreach (ModPlayer p in (ModPlayer[])vars[keyModPlayerArray].Get(player))
             {
                 Type pType = p.GetType();
 
