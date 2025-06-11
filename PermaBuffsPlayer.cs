@@ -76,6 +76,9 @@ namespace PermaBuffs
         public bool tryAddModBanner;
         public bool bannersNeedRefresh = false;
         public bool initialized = false;
+        public bool setCrystalLeafFlag;
+        public bool setSolarCounterFlag;
+        public bool stardustGuardianFlag;
 
         public static ModKeybind alwaysPermanentKey;
         public static ModKeybind neverPermanentKey;
@@ -206,7 +209,7 @@ namespace PermaBuffs
 
                 if (buff.isActive && (alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
-                    PermaBuffs.preBuffUpdateHooks[buff.type](player, buffSlot, alwaysPermanent[buff.type], out int type);
+                    PermaBuffs.preBuffUpdateHooks[buff.type](player, ref buffSlot, alwaysPermanent[buff.type], out int type);
                 }
             }
         }
@@ -248,7 +251,7 @@ namespace PermaBuffs
                 // Call hooks
                 if ((alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.postBuffUpdateHooks[buff.type] != null)
                 {
-                    PermaBuffs.postBuffUpdateHooks[buff.type](player, buffSlot, alwaysPermanent[buff.type], out int type);
+                    PermaBuffs.postBuffUpdateHooks[buff.type](player, ref buffSlot, alwaysPermanent[buff.type], out int type);
                 }
             }
 
@@ -493,6 +496,20 @@ namespace PermaBuffs
             tag.Add("ItemList", itemList);
             tag.Add("CurrentBuffTotal", BuffLoader.BuffCount.ToString());
             tag.Add("CurrentNPCTotal", NPCLoader.NPCCount.ToString());
+        }
+
+        public override void PostUpdateEquips()
+        {
+            Player player = Player;
+
+            if (setCrystalLeafFlag)
+                player.crystalLeaf = true;
+
+            if (setSolarCounterFlag)
+                player.solarCounter = 180;
+
+            if (stardustGuardianFlag)
+                player.AddBuff(BuffID.StardustGuardianMinion, 3600);
         }
     }
 }

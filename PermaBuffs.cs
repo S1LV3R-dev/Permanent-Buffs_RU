@@ -17,6 +17,7 @@ using Terraria.UI.Chat;
 using Microsoft.Xna.Framework;
 using ReLogic.Graphics;
 using Terraria.ModLoader.Core;
+using Steamworks;
 
 namespace PermaBuffs
 {
@@ -24,6 +25,8 @@ namespace PermaBuffs
     {
         public static BuffHook[] postBuffUpdateHooks { get; internal set; }
         public static BuffHook[] preBuffUpdateHooks { get; internal set; }
+
+        public static On_Player.orig_UpdateArmorSets updateArmor;
         public override void PostSetupContent()
         {
             preBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
@@ -53,13 +56,12 @@ namespace PermaBuffs
                             if (methodParams.Length != 4)
                                 continue;
 
-                            // Function signature matches expected
-                            if (methodParams[0].ParameterType == typeof(Player) && methodParams[1].ParameterType == typeof(int) &&
-                                methodParams[2].ParameterType == typeof(bool))
+                            // Function signature seems good at a glance
+                            if (methodParams[0].ParameterType == typeof(Player) && methodParams[2].ParameterType == typeof(bool))
                             {
-
                                 BuffHook hook = method.CreateDelegate<BuffHook>();
-                                hook(null, 0, false, out int buffType);
+                                int slot = 0;
+                                hook(null, ref slot, false, out int buffType);
 
                                 if (buffType > 0 && buffType < BuffLoader.BuffCount)
                                     postBuffUpdateHooks[buffType] = hook;
@@ -95,13 +97,96 @@ namespace PermaBuffs
             // Banner compatibility hooks.
             // The has banner hook is bugged out to only occasionally activate when the player is hit and nowhere else
             // Meaning I had to instead hook everything that applied the hasBannerBuff hook to my code...
-            // Terraria.On_Player.HasNPCBannerBuff += HasNPCBannerBuff;
+            Terraria.On_Player.HasNPCBannerBuff += HasNPCBannerBuffV2;
             Terraria.On_Player.ApplyBannerOffenseBuff_int_refHitModifiers += ApplyBannerOffenseBuff;
             Terraria.On_Player.ApplyBannerDefenseBuff_int_refHurtModifiers += ApplyBannerDefenseBuff;
             Terraria.On_Main.MouseText_DrawBuffTooltip += MouseTextDrawBuffTooltip;
 
+            On_Player.UpdateArmorLights += MakeArmorSetBuffsPermanent;
+            On_Player.UpdateArmorSets += UpdateArmorSets;
+
             PermaBuffsPlayer.alwaysPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Always Permanent", Microsoft.Xna.Framework.Input.Keys.P);
             PermaBuffsPlayer.neverPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Never Permanent", Microsoft.Xna.Framework.Input.Keys.N);
+        }
+
+        internal static void MakeArmorSetBuffsPermanent(On_Player.orig_UpdateArmorLights orig, Player player)
+        {
+            orig(player);
+
+            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+
+            int oldHead = player.head;
+            int oldBody = player.body;
+            int oldLegs = player.legs;
+
+            // Booleans to do an action after the last set bonus was called
+            ref bool setCrystalLeafFlag = ref modPlayer.setCrystalLeafFlag;
+            ref bool setSolarCounterFlag = ref modPlayer.setSolarCounterFlag;
+            ref bool stardustGuardianFlag = ref modPlayer.stardustGuardianFlag;
+
+            setSolarCounterFlag = setSolarCounterFlag = stardustGuardianFlag = false;
+
+            // Handle vanilla setbonuses tied to equipment being permabuffed
+            if (modPlayer.alwaysPermanent[BuffID.BeetleMight3])
+            {
+                player.beetleOrbs = 3;
+                player.beetleCounter = 5210;
+                player.beetleCountdown = 0;
+                player.beetleBuff = true;
+                player.AddBuff(BuffID.BeetleMight3, 5);
+
+                // Temporarily equip beetle armor
+                player.head = 157; player.body = 105; player.legs = 98;
+                updateArmor(player, player.whoAmI);
+            }
+
+            if (modPlayer.alwaysPermanent[BuffID.BeetleEndurance3])
+            {
+                player.beetleOrbs = 3;
+                player.beetleDefense = true;
+                player.AddBuff(BuffID.BeetleEndurance3, 5);
+
+                // Temporarily equip beetle armor
+                player.head = 157; player.body = 106; player.legs = 98;
+                updateArmor(player, player.whoAmI);
+            }
+
+            if (modPlayer.alwaysPermanent[BuffID.SolarShield3])
+            {
+                player.solarShields = 3;
+                player.solarCounter = 180;
+                player.AddBuff(BuffID.SolarShield3, 5);
+
+                player.head = 171; player.body = 177; player.legs = 112;
+                updateArmor(player, player.whoAmI);
+                setSolarCounterFlag = true;
+            }
+
+            if (modPlayer.alwaysPermanent[BuffID.LeafCrystal])
+            {
+                player.head = 80; player.body = 51; player.legs = 47;
+                updateArmor(player, player.whoAmI);
+
+                // Save crystal leaf buff
+                player.crystalLeaf = false; setCrystalLeafFlag = true;
+            }
+
+            if (modPlayer.alwaysPermanent[BuffID.StardustGuardianMinion])
+            {
+                player.head = 189; player.body = 190; player.legs = 130;
+                updateArmor(player, player.whoAmI);
+
+                stardustGuardianFlag = true;
+            }
+
+            // Equip the old armor back
+            player.head = oldHead; player.body = oldBody; player.legs = oldLegs;
+        }
+
+        internal static void UpdateArmorSets(On_Player.orig_UpdateArmorSets orig, Player player, int playerIndex)
+        {
+            updateArmor ??= orig;
+            updateArmor(player, playerIndex);
         }
 
         internal static int NeverBuffsHiddenPatchFindBuffIndex(Terraria.On_Player.orig_FindBuffIndex orig, Player player, int type)
@@ -333,6 +418,19 @@ namespace PermaBuffs
 
         // Unfortunately this function is bugged as a hook. It is not always called when banner code is run - meaning its useless to override the short way. 
         // This means I had to override all the associated hooks that called this function with my Function call to the hook... SMH
+        internal static bool HasNPCBannerBuffV2(On_Player.orig_HasNPCBannerBuff orig, Player player, int bannerType)
+        {
+            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+
+            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner] || PermaBuffsConfig.instance.keepBannerBuffs)
+            {
+                return modPlayer.activeBanners[bannerType];
+            }
+            else
+            {
+                return orig(player, bannerType);
+            }
+        }
         internal static bool HasNPCBannerBuff(Player player, int bannerType)
         {
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
