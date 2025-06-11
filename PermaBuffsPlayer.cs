@@ -210,10 +210,17 @@ namespace PermaBuffs
             {
                 BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
 
-                if (buff.isActive && (alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.preBuffUpdateHooks[buff.type] != null)
+                if (PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
+                    BuffStatus status = BuffStatus.NotModified;
+
+                    if (alwaysPermanent[buff.type])
+                        status = BuffStatus.IsPermaBuffed;
+                    else if (neverPermanent[buff.type])
+                        status = BuffStatus.IsNeverBuffed;
+
                     foreach (BuffHook hook in PermaBuffs.preBuffUpdateHooks[buff.type])
-                        hook(player, ref buffSlot, alwaysPermanent[buff.type], out int type);
+                        hook(player, ref buffSlot, (int)status, out int type);
                 }
             }
         }
@@ -258,10 +265,17 @@ namespace PermaBuffs
                 }
 
                 // Call hooks
-                if ((alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.postBuffUpdateHooks[buff.type] != null)
+                if (PermaBuffs.postBuffUpdateHooks[buff.type] != null)
                 {
+                    BuffStatus status = BuffStatus.NotModified;
+
+                    if (alwaysPermanent[buff.type])
+                        status = BuffStatus.IsPermaBuffed;
+                    else if (neverPermanent[buff.type])
+                        status = BuffStatus.IsNeverBuffed;
+
                     foreach (BuffHook hook in PermaBuffs.postBuffUpdateHooks[buff.type])
-                        hook(player, ref buffSlot, alwaysPermanent[buff.type], out int type);
+                        hook(player, ref buffSlot, (int)status, out int type);
                 }
             }
 
@@ -290,6 +304,11 @@ namespace PermaBuffs
 
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             Player player = Main.LocalPlayer;
+
+            if (config.clearPermaBuffsOnDeathOrLoad)
+                alwaysPermanent = new bool[BuffLoader.BuffCount];
+            if (config.clearNeverBuffsOnDeathOrLoad)
+                neverPermanent = new bool[BuffLoader.BuffCount];
 
             for (int i = 0; i < Player.MaxBuffs; i++)
             {
@@ -332,12 +351,19 @@ namespace PermaBuffs
             minionSlots = 0f;
             minionIncrease = 0f;
 
+            if (config.clearPermaBuffsOnDeathOrLoad)
+                alwaysPermanent = new bool[BuffLoader.BuffCount];
+            if (config.clearNeverBuffsOnDeathOrLoad)
+                neverPermanent = new bool[BuffLoader.BuffCount];
+
             for (int i = 0; i < pendingBuffs.Count && i < Player.MaxBuffs; i++)
             {
                 BuffInfo buff = pendingBuffs[i];
                 // Re-apply buffs between sessions if set to persist through death
                 if (buff.shouldPersistThroughDeath(this, config))
+                {
                     buff.AddBuffToPlayer(this, player);
+                }
             }
 
             goldenTicks = 0;
@@ -390,9 +416,7 @@ namespace PermaBuffs
             IList<string> neverList = tag.GetList<string>("NeverList");
             IList<string> bannerList = tag.GetList<string>("BannerList");
             IList<string> itemList = tag.GetList<string>("ItemList");
-
-            if (PermaBuffsConfig.instance.doNotApplyBuffsAfterDeathOrLoad)
-                return;
+            PermaBuffsConfig config = PermaBuffsConfig.instance;
 
             try
             {
@@ -402,16 +426,6 @@ namespace PermaBuffs
             catch
             {
                 buffCountDifferent = true;
-            }
-
-            try
-            {
-                int oldCount = int.Parse(tag.GetString("CurrentNPCTotal"));
-                npcCountDifferent = NPCLoader.NPCCount != oldCount && oldCount != NPCID.Count;
-            }
-            catch
-            {
-                npcCountDifferent = true;
             }
 
             for (int i = 0; i < buffs.Count; i++)
@@ -425,8 +439,19 @@ namespace PermaBuffs
 
             ParseTypeList(permaList, ref alwaysPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
             ParseTypeList(neverList, ref neverPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
-            ParseTypeList(bannerList, ref activeBanners, npcCountDifferent, NPCID.Count, ref tryAddModBanner);
+            
+            try
+            {
+                int oldCount = int.Parse(tag.GetString("CurrentNPCTotal"));
+                npcCountDifferent = NPCLoader.NPCCount != oldCount && oldCount != NPCID.Count;
+            }
+            catch
+            {
+                npcCountDifferent = true;
+            }
 
+            ParseTypeList(bannerList, ref activeBanners, npcCountDifferent, NPCID.Count, ref tryAddModBanner);
+            
             for (int i = 0; i < itemList.Count; i++)
             {
                 string[] list = itemList[i].ToString().Split(',');

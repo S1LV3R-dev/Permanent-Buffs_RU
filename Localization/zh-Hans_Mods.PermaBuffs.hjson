@@ -32,16 +32,6 @@ Configs: {
 			Label: 自动隐藏按键提示
 		}
 
-		doNotApplyBuffsAfterDeathOrLoad: {
-			Tooltip:
-				'''
-				启用此选项后
-				死亡或重生时将禁用所有[c/fff200:永久生效]/[c/a739de:永不生效]增益的加载
-				这在你仅想增加持续时间或想要重置[c/fff200:永久生效]/[c/a739de:永不生效]增益时非常有用
-				'''
-			Label: 死亡或加载后不应用增益效果
-		}
-
 		experimentalChanges: {
 			Tooltip:
 				'''
@@ -52,6 +42,26 @@ Configs: {
 				'''
 			Label: 启用最新的实验性内容
 		}
+
+		clearNeverBuffsOnDeathOrLoad: {
+			// Label: Clear NeverBuffs On Death Or Load
+			/* Tooltip:
+				'''
+				By toggling this on, you disable any neverBuffs from being loaded upon death or spawn.
+				This is useful if you wish to reset your neverBuffs.
+				''' */
+		}
+
+		clearPermaBuffsOnDeathOrLoad: {
+			// Label: Clear Permanent Buffs On Death Or Load
+			/* Tooltip:
+				'''
+				By toggling this on, you disable any permaBuffs from being loaded upon death or spawn.
+				This is useful if you wish to reset your permaBuffs or only benefit from the permanent duration.
+				''' */
+		}
+
+		// Headers.Advanced: "[c/9370db:Advanced]"
 	}
 }
 

@@ -3,42 +3,63 @@ Configs: {
 		DisplayName: Permanent Buffs Config
 
 		keepStationBuffs: {
-			Tooltip: This makes buffs such as the ones obtained from the Sharpening Station, Bewitching Table, etc persist after death.
+			Tooltip: This makes buffs such as the ones obtained from the Sharpening Station, Bewitching Table, etc permanent.
 			Label: Permanent Station Buffs
 		}
 
 		keepBannerBuffs: {
-			Tooltip: This lets you permanently keep buffs you've recieved from banners anywhere you go.
+			Tooltip: This lets you always permanently keep buffs you've recieved from banners anywhere you go.
 			Label: Permanent Banners
 		}
 
 		drawBorders: {
-			Tooltip: When set to true, all buffs modified by the mod will gain a golden frame around their icon. Buffs set to be blocked will gain a purple frame.
+			Tooltip:
+				'''
+				When set to true, all buffs modified by the mod will gain a golden frame around their icon.
+				Buffs set to be blocked will gain a purple frame.
+				'''
 			Label: Draw Borders
 		}
 
 		autoHideKeybindTooltips: {
-			Tooltip: When set to true, keybind tooltips are hidden after they're shown for the first time. This has no effect if you have not bound said keybind in the controls.
-			Label: Auto Hide Keybind Tooltips
-		}
-
-		doNotApplyBuffsAfterDeathOrLoad: {
 			Tooltip:
 				'''
-				By toggling this on, you disable any perma/never buffs from being loaded upon death or spawn.
-				This is useful if you only want the duration increase or want to reset your perma/never buffs.
+				When set to true, keybind tooltips are hidden after they're shown for the first time.
+				This has no effect if you have not bound said keybind in the controls.
 				'''
-			Label: Do Not Apply Buffs After Death Or Load
+			Label: Auto Hide Keybind Tooltips
 		}
 
 		experimentalChanges: {
 			Tooltip:
 				'''
-				When set to true, you can play with experimental mod compatibility features powered by reflection but might encounter more bugs.
-				Please report any issues to my github or steam workshop page. **Enabling this feature requires a full reload to take effect**
+				When set to true, experimental cross-mod functionality patches powered by reflection are enabled. 
+				This may allow various permabuff/neverbuff effects to apply correctly where they otherwise wouldn't.
+				Current Supported Mods: [c/ff0000:(Experimental) Calamity], [c/ffff00:(Stable) The Story of Red Cloud]
+				Please report any bugs/issues to my github or the discord. **Enabling this feature requires a full reload to take effect**
 				'''
-			Label: Use the latest experimental features
+			Label: Use the Latest Experimental Features
 		}
+
+		clearNeverBuffsOnDeathOrLoad: {
+			Label: Clear NeverBuffs On Death Or Load
+			Tooltip:
+				'''
+				By toggling this on, you disable any neverBuffs from being loaded upon death or spawn.
+				This is useful if you wish to reset your neverBuffs.
+				'''
+		}
+
+		clearPermaBuffsOnDeathOrLoad: {
+			Label: Clear Permanent Buffs On Death Or Load
+			Tooltip:
+				'''
+				By toggling this on, you disable any permaBuffs from being loaded upon death or spawn.
+				This is useful if you wish to reset your permaBuffs or only benefit from the permanent duration.
+				'''
+		}
+
+		Headers.Advanced: "[c/9370db:Advanced]"
 	}
 }
 

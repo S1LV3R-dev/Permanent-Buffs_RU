@@ -57,11 +57,11 @@ namespace PermaBuffs
                                 continue;
 
                             // Function signature seems good at a glance
-                            if (methodParams[0].ParameterType == typeof(Player) && methodParams[2].ParameterType == typeof(bool))
+                            if (methodParams[0].ParameterType == typeof(Player) && methodParams[2].ParameterType == typeof(int))
                             {
                                 BuffHook hook = method.CreateDelegate<BuffHook>();
                                 int slot = 0;
-                                hook(null, ref slot, false, out int buffType);
+                                hook(null, ref slot, 0, out int buffType);
 
                                 if (buffType > 0 && buffType < BuffLoader.BuffCount)
                                 {
@@ -73,7 +73,7 @@ namespace PermaBuffs
                         catch
                         {
                             // Only valid Delegates are added, thrown errors means an invalid function was passed through
-                            throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, ref int, bool, out int).\n" +
+                            throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, ref int, int, out int).\n" +
                                 "Please look at the PermaBuffsHooks class and BuffHook delegate to reference how to form an accepted method.");
                         }
                     }
@@ -91,6 +91,7 @@ namespace PermaBuffs
 
             // Dunno how this will affect the game so its experimental...
             // Theoretically since it stops the game from checking if a neverbuff is there, code that relies on the debuff outside buff.update will operate as if the buff isnt there.
+            // Seems to work fine though as per my testing.
             if (PermaBuffsConfig.instance.experimentalChanges)
             {
                 Terraria.On_Player.HasBuff += NeverBuffsHiddenPatchHasBuff;

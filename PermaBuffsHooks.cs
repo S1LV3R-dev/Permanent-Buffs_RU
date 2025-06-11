@@ -14,20 +14,21 @@ using System.ComponentModel;
 
 namespace PermaBuffs
 {
+    public enum BuffStatus { NotModified, IsPermaBuffed, IsNeverBuffed }
     /// <summary>
-    /// A function delegate class that gets called during Post/PreUpdateBuffs on the player. For running custom code that correctly implements certain perma/neverbuffs
+    /// A function delegate class that gets called during Post/PreUpdateBuffs on the player's active buffs. For running custom code that correctly implements certain perma/neverbuffs
     /// </summary>
     /// <param name="player">The Player instance who has the buff. This will be called with a null reference the first time the hook is run.</param>
     /// <param name="buffSlotOnPlayer"> The index of the buff in player.buffType and player.buffTime</param>
-    /// <param name="isPermaBuffed">Called with true if the buff is permabuffed, false if it's neverbuffed</param>
+    /// <param name="buffStatus">Called with 0 if the buff is not modified, 1 if it's permabuffed, and 2 if it's neverbuffed. </param>
     /// <param name="buffType">The buffType this hook is for. This needs to be set in the function before the player null reference check.</param>
-    public delegate void BuffHook(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType);
+    public delegate void BuffHook(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType);
 
     /// <summary>
     /// These methods will be called post Buff.Update. For proper integration please follow the instruction below.
     /// Every function should have the return type of void, be static, and return after buffType is set if "player" == null.
     /// If the function is meant for a modbuff, return a bufftype of 0 if the mod is not loaded
-    /// Do not write any functions that don't directly follow the function signature of void(Player, int, bool, out int, bool) in the class. 
+    /// Do not write any functions that don't directly follow the function signature of void(Player, ref int, int, out int) in the class. 
     /// This class is reserved for functions that are set to become delegates of the above function type. Nothing else should be present.
     /// If you're extending compatibility of your mod to this mod, the process is simple. Create a public partial class with the same type name 
     /// as the one below, enclose it within a 'PermaBuffs' namespace, and define functions with the above specifications. 
@@ -39,67 +40,67 @@ namespace PermaBuffs
         #region Vanilla
 
         // If the player permabuffs one of the tier buffs, auto upgrade it to level 3
-        public static void BeetleEnduranceBuff1(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void BeetleEnduranceBuff1(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.BeetleEndurance1;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.BeetleEndurance1] = false;
             modPlayer.alwaysPermanent[BuffID.BeetleEndurance3] = true;
         }
-        public static void BeetleEnduranceBuff2(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void BeetleEnduranceBuff2(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.BeetleEndurance2;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.BeetleEndurance2] = false;
             modPlayer.alwaysPermanent[BuffID.BeetleEndurance3] = true;
         }
-        public static void SolarShieldBuff1(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void SolarShieldBuff1(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.SolarShield1;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.SolarShield1] = false;
             modPlayer.alwaysPermanent[BuffID.SolarShield3] = true;
         }
-        public static void SolarShieldBuff2(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void SolarShieldBuff2(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.SolarShield2;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.SolarShield2] = false;
             modPlayer.alwaysPermanent[BuffID.SolarShield3] = true;
         }
-        public static void BeetleDamageBuff1(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void BeetleDamageBuff1(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.BeetleMight1;
             
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.BeetleMight1] = false;
             modPlayer.alwaysPermanent[BuffID.BeetleMight3] = true;
         }
-        public static void BeetleDamageBuff2(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void BeetleDamageBuff2(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = BuffID.BeetleMight2;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
 
             var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
             modPlayer.alwaysPermanent[BuffID.BeetleMight2] = false;
@@ -108,14 +109,14 @@ namespace PermaBuffs
 #endregion
 
         #region CalamityMod
-        public static void CalamityPermaRageMode(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void CalamityPermaRageMode(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.rageBuffType : 0;
             if (player == null)
                 return;
 
             // NeverBuff is already properly applied -> permabuff logic needed
-            if (!isPermaBuffed)
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed)
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
@@ -126,19 +127,19 @@ namespace PermaBuffs
             // I'm not familiar enough with calamity to know whether or not there are other considerations to take into account however.
             PrivateAccess.Calamity.rage = PrivateAccess.Calamity.maxRage;
         }
-        public static void CalamityPermaAquaticHeartBuff(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void CalamityPermaAquaticHeartBuff(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.aquaticHeartBuffType : 0;
             if (player == null) 
                 return;
 
-            if (!isPermaBuffed || !PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName))
-                return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
+            if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName)) return;
 
             // This was originally controlled by the accessory, now if it's permabuffed it will remain true
             PrivateAccess.Calamity.aquaticHeart = true;
         }
-        public static void CalamityPermaHasteBuff(Player player, ref int buffSlotOnPlayer, bool isPermabuffed, out int buffType)
+        public static void CalamityPermaHasteBuff(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.aquaticHeartBuffType : 0;
             if (player == null) 
@@ -147,24 +148,24 @@ namespace PermaBuffs
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName))
                 return;
 
-            if (isPermabuffed)
+            if (buffStatus == (int)BuffStatus.IsPermaBuffed)
             {
                 // The code has a max haste level of 3
                 PrivateAccess.Calamity.hasteLevel = 3;
             }
-            else
+            else if (buffStatus == (int)BuffStatus.IsNeverBuffed)
             {
                 // Immediately set haste level to 0 if never buffed.
                 PrivateAccess.Calamity.hasteLevel = 0;
             }
         }
-        public static void CalamityPermaProfanedCrystalBuff(Player player, ref int buffSlotOnPlayer, bool isPermabuffed, out int buffType)
+        public static void CalamityPermaProfanedCrystalBuff(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.aquaticHeartBuffType : 0;
             if (player == null)
                 return;
 
-            if (!isPermabuffed)
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed)
                 return;
 
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName))
@@ -172,13 +173,13 @@ namespace PermaBuffs
 
             PrivateAccess.Calamity.profanedCrystal = true;
         }
-        public static void CalamityAbyssalDivingSuitBuff(Player player, ref int buffSlotOnPlayer, bool isPermabuffed, out int buffType)
+        public static void CalamityAbyssalDivingSuitBuff(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.abyssalDivingSuitBuffType : 0;
             if (player == null)
                 return;
 
-            if (!isPermabuffed)
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed)
                 return;
 
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName))
@@ -186,22 +187,22 @@ namespace PermaBuffs
 
             PrivateAccess.Calamity.abyssalDivingSuit = true;
         }
-        public static void CalamityPopoBuff(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void CalamityPopoBuff(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.popoBuffType : 0;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName)) return;
 
             PrivateAccess.Calamity.snowman = true;
         }
-        public static void CalamityPopoNoselessBuff(Player player, ref int buffSlot, bool isPermaBuffed, out int buffType)
+        public static void CalamityPopoNoselessBuff(Player player, ref int buffSlot, int buffStatus, out int buffType)
         {
             buffType = PermaBuffsConfig.instance.experimentalChanges ? PrivateAccess.Calamity.popoNoselessBuffType : 0;
 
             if (player == null) return;
-            if (!isPermaBuffed) return;
+            if (buffStatus != (int)BuffStatus.IsPermaBuffed) return;
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.Calamity.ModName)) return;
 
             PrivateAccess.Calamity.snowman = true;
@@ -212,10 +213,10 @@ namespace PermaBuffs
     }
 
     /// <summary>
-    /// These methods will be called post Buff.Update. For proper integration please follow the instruction below.
+    /// These methods will be called prior to Buff.Update. For proper integration please follow the instruction below.
     /// Every function should have the return type of void, be static, and return after buffType is set if "player" == null.
     /// If the function is meant for a modbuff, return a bufftype of 0 if the mod is not loaded
-    /// Do not write any functions that don't directly follow the function signature of void(Player, int, bool, out int, bool) in the class. 
+    /// Do not write any functions that don't directly follow the function signature of void(Player, ref int, int, out int) in the class. 
     /// This class is reserved for functions that are set to become delegates of the above function type. Nothing else should be present.
     /// If you're extending compatibility of your mod to this mod, the process is simple. Create a public partial class with the same type name 
     /// as the one below, enclose it within a 'PermaBuffs' namespace, and define functions with the above specifications. 
@@ -223,20 +224,20 @@ namespace PermaBuffs
     /// </summary>
     public partial class PermaBuffsPostBuffUpdateHooks
     {
-        public static void PotionSickness(Player p, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void PotionSickness(Player p, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = BuffID.PotionSickness;
             if (p == null)
                 return;
 
             // If potion sickness is neverbuffed get rid of any heal cooldown
-            if (!isPermaBuffed)
+            if (buffStatus == (int)BuffStatus.IsNeverBuffed)
                 p.potionDelay = 0;
-            else // Player can never heal unless the permabuff is disabled
+            else if (buffStatus == (int)BuffStatus.IsPermaBuffed) // Player can never heal unless the permabuff is disabled
                 p.potionDelay = Math.Max(p.potionDelay, 2);
         }
        
-        public static void NeverBuffCurse(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void NeverBuffCurse(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             // Use the helper class to set the buffType
             buffType = PrivateAccess.TsorcRevamp.curseBuffType;
@@ -245,7 +246,7 @@ namespace PermaBuffs
                 return;
 
             // Custom logic only applies during neverbuff
-            if (isPermaBuffed)
+            if (buffStatus != (int)BuffStatus.IsNeverBuffed)
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
@@ -255,7 +256,7 @@ namespace PermaBuffs
             PrivateAccess.TsorcRevamp.curseActive = false;
             PrivateAccess.TsorcRevamp.curseLevel = 0;
         }
-        public static void NeverBuffPowerfulCurse(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void NeverBuffPowerfulCurse(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             // Use the helper class to set the buffType
             buffType = PrivateAccess.TsorcRevamp.powerfulCurseBuffType;
@@ -264,7 +265,7 @@ namespace PermaBuffs
                 return;
 
             // Custom logic only applies during neverbuff
-            if (isPermaBuffed)
+            if (buffStatus != (int)BuffStatus.IsNeverBuffed)
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
@@ -275,11 +276,12 @@ namespace PermaBuffs
             PrivateAccess.TsorcRevamp.powerfulCurseLevel = 0;
         }
         // Curse buildup shouldn't exist if the curse is neverbuffed
-        public static void RemoveCurseBuildup(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void RemoveCurseBuildup(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PrivateAccess.TsorcRevamp.curseBuildupBuffType;
 
             if (player == null) return;
+            if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
 
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
 
@@ -287,14 +289,16 @@ namespace PermaBuffs
             {
                 player.DelBuff(buffSlotOnPlayer);
                 buffSlotOnPlayer--;
+                PrivateAccess.TsorcRevamp.curseLevel = 0;
             }
         }
         // PowerfulCurse buildup shouldn't exist if the powerfulCurse is neverbuffed
-        public static void RemovePowerfulCurseBuildup(Player player, ref int buffSlotOnPlayer, bool isPermaBuffed, out int buffType)
+        public static void RemovePowerfulCurseBuildup(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = PrivateAccess.TsorcRevamp.powerfulCurseBuildupBuffType;
 
             if (player == null) return;
+            if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
 
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
 
@@ -302,7 +306,19 @@ namespace PermaBuffs
             {
                 player.DelBuff(buffSlotOnPlayer);
                 buffSlotOnPlayer--;
+                PrivateAccess.TsorcRevamp.powerfulCurseLevel = 0;
             }
+        }
+        // Neverbuff already works functionally, this really just updates the display lol. It looking less buggy is what counts
+        public static void NeverBuffFracturingArmor(Player player, ref int buffSlot, int status, out int buffType)
+        {
+            buffType = PrivateAccess.TsorcRevamp.fracturingArmorBuffType;
+
+            if (player == null) return;
+            if (status != (int)BuffStatus.IsNeverBuffed) return;
+            if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
+
+            PrivateAccess.TsorcRevamp.fracturingArmor = 0;
         }
     }
 
@@ -324,10 +340,12 @@ namespace PermaBuffs
             internal const string keyPowerfulCurseActive = "powerfulCurseActive";
             internal const string keyCurseLevel = "CurseLevel";
             internal const string keyPowerfulCurseLevel = "PowerfulCurseLevel";
+            internal const string keyFracturingArmor = "FracturingArmor";
             public static bool curseActive { get { return (bool)vars[keyCurseActive].Get(myPlayer); } set { vars[keyCurseActive].Set(myPlayer, value); } }
             public static bool powerfulCurseActive { get { return (bool)vars[keyPowerfulCurseActive].Get(myPlayer); } set { vars[keyPowerfulCurseActive].Set(myPlayer, value); } }
             public static int curseLevel { get { return (int)vars[keyCurseLevel].Get(myPlayer); } set { vars[keyCurseLevel].Set(myPlayer, value); } }
             public static int powerfulCurseLevel { get { return (int)vars[keyPowerfulCurseLevel].Get(myPlayer); } set { vars[keyPowerfulCurseLevel].Set(myPlayer, value); } }
+            public static int fracturingArmor { get { return (int)vars[keyFracturingArmor].Get(myPlayer); } set { vars[keyFracturingArmor].Set(myPlayer, value); } }
 
             internal static ModPlayer myPlayer;
             internal static Type playerType;
@@ -336,6 +354,7 @@ namespace PermaBuffs
             internal static int powerfulCurseBuffTypeCached = -1;
             internal static int curseBuildupBuffTypeCached = -1;
             internal static int powerfulCurseBuildupBuffTypeCached = -1;
+            internal static int fracturingArmorBuffTypeCached = -1;
             public static int curseBuffType
             {
                 get
@@ -374,6 +393,15 @@ namespace PermaBuffs
                         CacheLoadedModBuffTypes();
 
                     return powerfulCurseBuildupBuffTypeCached;
+                }
+            }
+            public static int fracturingArmorBuffType
+            {
+                get
+                {
+                    if (fracturingArmorBuffTypeCached == -1)
+                        CacheLoadedModBuffTypes();
+                    return fracturingArmorBuffTypeCached;
                 }
             }
         }
@@ -490,11 +518,11 @@ namespace PermaBuffs
                 catch { vars = null; return false; }
 
                 // Set up the field accessors of the supported mods. 
-                // Set mod access keys returns null if the mod isn't loaded.
+                // Set mod access keys returns null if the mod isn't loaded or any of the accessors fail to compile
                 TsorcRevamp.playerType = SetModAccessKeys(TsorcRevamp.ModName, TsorcRevamp.playerClass,
                 [
                     TsorcRevamp.keyCurseActive, TsorcRevamp.keyPowerfulCurseActive, TsorcRevamp.keyCurseLevel,
-                    TsorcRevamp.keyPowerfulCurseLevel
+                    TsorcRevamp.keyPowerfulCurseLevel, TsorcRevamp.keyFracturingArmor
                 ]);
 
                 Calamity.playerType = SetModAccessKeys(Calamity.ModName, Calamity.playerClass,
@@ -554,6 +582,11 @@ namespace PermaBuffs
                 TsorcRevamp.powerfulCurseBuildupBuffTypeCached = 0;
             else
                 TsorcRevamp.powerfulCurseBuildupBuffTypeCached = powerfulCurseBuildupBuff.Type;
+
+            if (!ModContent.TryFind(TsorcRevamp.ModName, "FracturingArmor", out ModBuff fracturingArmorBuff))
+                TsorcRevamp.fracturingArmorBuffTypeCached = 0;
+            else
+                TsorcRevamp.fracturingArmorBuffTypeCached = fracturingArmorBuff.Type;
 
 
             // Calamity mod

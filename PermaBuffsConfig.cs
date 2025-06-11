@@ -30,7 +30,18 @@ namespace PermaBuffs
         public bool keepBannerBuffs;
 
         [DefaultValue(false)]
-        public bool doNotApplyBuffsAfterDeathOrLoad;
+        public bool clearNeverBuffsOnDeathOrLoad;
+
+        [DefaultValue(false)]
+        public bool clearPermaBuffsOnDeathOrLoad;
+
+        [Header("Advanced")]
+
+        /// <summary>
+        /// When set to true, you can use experimental mod functionality features powered by reflection but might encounter more bugs. Please report any issues to my github or steam workshop page.
+        /// </summary>
+        [DefaultValue(true)]
+        public bool experimentalChanges;
 
         /// <summary>
         /// When set to true, buff icons affected by the mod will gain a frame.
@@ -43,11 +54,5 @@ namespace PermaBuffs
         /// </summary>
         [DefaultValue(false)]
         public bool autoHideKeybindTooltips;
-
-        /// <summary>
-        /// When set to true, you can play with experimental mod compatibility features powered by reflection but might encounter more bugs. Please report any issues to my github or steam workshop page.
-        /// </summary>
-        [DefaultValue(false)]
-        public bool experimentalChanges;
     }
 }

@@ -141,7 +141,6 @@ namespace PermaBuffs
             shouldPersist = shouldPersist || (config.keepBannerBuffs && type == BuffID.MonsterBanner);
             shouldPersist = shouldPersist || modPlayer.alwaysPermanent[type];
             shouldPersist = shouldPersist && !modPlayer.neverPermanent[type];
-            shouldPersist = shouldPersist && !config.doNotApplyBuffsAfterDeathOrLoad;
 
             return shouldPersist;
         }
