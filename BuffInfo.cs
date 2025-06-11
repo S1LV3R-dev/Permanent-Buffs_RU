@@ -105,6 +105,8 @@ namespace PermaBuffs
                 case BuffID.Sunflower:
                 case BuffID.MonsterBanner:
                 case BuffID.CatBast:
+                case BuffID.Werewolf:
+                case BuffID.Merfolk:
 
                 // Debatable section - could go either way depending on what you want to do.
                 case BuffID.PeaceCandle:

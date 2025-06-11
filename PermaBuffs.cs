@@ -23,14 +23,14 @@ namespace PermaBuffs
 {
     public class PermaBuffs : Mod
     {
-        public static BuffHook[] postBuffUpdateHooks { get; internal set; }
-        public static BuffHook[] preBuffUpdateHooks { get; internal set; }
+        public static List<BuffHook>[] postBuffUpdateHooks { get; internal set; }
+        public static List<BuffHook>[] preBuffUpdateHooks { get; internal set; }
 
         public static On_Player.orig_UpdateArmorSets updateArmor;
         public override void PostSetupContent()
         {
-            preBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
-            postBuffUpdateHooks = new BuffHook[BuffLoader.BuffCount];
+            preBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
+            postBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             var config = PermaBuffsConfig.instance;
 
             foreach (Mod mod in ModLoader.Mods)
@@ -64,13 +64,16 @@ namespace PermaBuffs
                                 hook(null, ref slot, false, out int buffType);
 
                                 if (buffType > 0 && buffType < BuffLoader.BuffCount)
-                                    postBuffUpdateHooks[buffType] = hook;
+                                {
+                                    postBuffUpdateHooks[buffType] ??= [];
+                                    postBuffUpdateHooks[buffType].Add(hook);
+                                }
                             }
                         }
                         catch
                         {
                             // Only valid Delegates are added, thrown errors means an invalid function was passed through
-                            throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, int, bool, out int).\n" +
+                            throw new ArgumentException(method.Name + " does not follow the expected function parameters of public static void func(Player, ref int, bool, out int).\n" +
                                 "Please look at the PermaBuffsHooks class and BuffHook delegate to reference how to form an accepted method.");
                         }
                     }
@@ -124,31 +127,37 @@ namespace PermaBuffs
             ref bool setSolarCounterFlag = ref modPlayer.setSolarCounterFlag;
             ref bool stardustGuardianFlag = ref modPlayer.stardustGuardianFlag;
 
-            setSolarCounterFlag = setSolarCounterFlag = stardustGuardianFlag = false;
+            setCrystalLeafFlag = stardustGuardianFlag = false;
 
             // Handle vanilla setbonuses tied to equipment being permabuffed
             if (modPlayer.alwaysPermanent[BuffID.BeetleMight3])
             {
                 player.beetleOrbs = 3;
                 player.beetleCounter = 5210;
-                player.beetleCountdown = 0;
-                player.beetleBuff = true;
+                player.beetleCountdown = 10;
                 player.AddBuff(BuffID.BeetleMight3, 5);
 
                 // Temporarily equip beetle armor
                 player.head = 157; player.body = 105; player.legs = 98;
                 updateArmor(player, player.whoAmI);
+                modPlayer.hadPermaBeetleBuff = true;
             }
-
-            if (modPlayer.alwaysPermanent[BuffID.BeetleEndurance3])
+            else if (modPlayer.alwaysPermanent[BuffID.BeetleEndurance3])
             {
                 player.beetleOrbs = 3;
-                player.beetleDefense = true;
                 player.AddBuff(BuffID.BeetleEndurance3, 5);
 
                 // Temporarily equip beetle armor
                 player.head = 157; player.body = 106; player.legs = 98;
                 updateArmor(player, player.whoAmI);
+                modPlayer.hadPermaBeetleBuff = true;
+            }
+            else if (modPlayer.hadPermaBeetleBuff)
+            {
+                player.beetleOrbs = 0;
+                player.beetleDefense = false;
+                player.beetleOffense = false;
+                modPlayer.hadPermaBeetleBuff = false;
             }
 
             if (modPlayer.alwaysPermanent[BuffID.SolarShield3])
@@ -160,6 +169,11 @@ namespace PermaBuffs
                 player.head = 171; player.body = 177; player.legs = 112;
                 updateArmor(player, player.whoAmI);
                 setSolarCounterFlag = true;
+            }
+            else if (setSolarCounterFlag)
+            {
+                player.solarShields = 0;
+                setSolarCounterFlag = false;
             }
 
             if (modPlayer.alwaysPermanent[BuffID.LeafCrystal])
@@ -2653,13 +2667,14 @@ namespace PermaBuffs
                 }
                 else if (player.buffType[j] == 28)
                 {
-                    if (!Main.dayTime && player.wolfAcc && !player.merman)
+                    if ((!Main.dayTime && player.wolfAcc && !player.merman) || modPlayer.alwaysPermanent[BuffID.Werewolf])
                     {
                         player.lifeRegen++;
                         player.wereWolf = true;
                         player.GetCritChance(DamageClass.Melee) += 2;
                         player.GetDamage(DamageClass.Melee) += 0.051f;
                         player.GetAttackSpeed(DamageClass.Melee) += 0.051f;
+                        player.statDefense += 3;
                         player.statDefense += 3;
                         player.moveSpeed += 0.05f;
                     }

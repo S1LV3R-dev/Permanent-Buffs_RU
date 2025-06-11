@@ -79,6 +79,9 @@ namespace PermaBuffs
         public bool setCrystalLeafFlag;
         public bool setSolarCounterFlag;
         public bool stardustGuardianFlag;
+        public bool hadPermaBeetleBuff = false;
+        public bool hideWerewolf = false;
+        public bool hideMerman = false;
 
         public static ModKeybind alwaysPermanentKey;
         public static ModKeybind neverPermanentKey;
@@ -209,7 +212,8 @@ namespace PermaBuffs
 
                 if (buff.isActive && (alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
-                    PermaBuffs.preBuffUpdateHooks[buff.type](player, ref buffSlot, alwaysPermanent[buff.type], out int type);
+                    foreach (BuffHook hook in PermaBuffs.preBuffUpdateHooks[buff.type])
+                        hook(player, ref buffSlot, alwaysPermanent[buff.type], out int type);
                 }
             }
         }
@@ -231,7 +235,12 @@ namespace PermaBuffs
                 BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
 
                 if (!buff.isActive)
-                    continue;
+                {
+                    if (!alwaysPermanent[buff.type])
+                        continue;
+                    else
+                        player.buffTime[buffSlot] = 2;
+                }
 
                 // Populate saved banners with the banners on screen if banners are active
                 if (buff.type == BuffID.MonsterBanner && (config.keepBannerBuffs || alwaysPermanent[buff.type]))
@@ -251,7 +260,8 @@ namespace PermaBuffs
                 // Call hooks
                 if ((alwaysPermanent[buff.type] || neverPermanent[buff.type]) && PermaBuffs.postBuffUpdateHooks[buff.type] != null)
                 {
-                    PermaBuffs.postBuffUpdateHooks[buff.type](player, ref buffSlot, alwaysPermanent[buff.type], out int type);
+                    foreach (BuffHook hook in PermaBuffs.postBuffUpdateHooks[buff.type])
+                        hook(player, ref buffSlot, alwaysPermanent[buff.type], out int type);
                 }
             }
 
@@ -510,6 +520,32 @@ namespace PermaBuffs
 
             if (stardustGuardianFlag)
                 player.AddBuff(BuffID.StardustGuardianMinion, 3600);
+
+            if (alwaysPermanent[BuffID.Werewolf])
+            {
+                if (player.wolfAcc)
+                {
+                    hideWerewolf = player.hideWolf;
+                }
+                else
+                {
+                    player.wolfAcc = true;
+                    player.hideWolf = hideWerewolf;
+                }
+            }
+
+            if (alwaysPermanent[BuffID.Merfolk])
+            {
+                if (player.accMerman)
+                {
+                    hideMerman = player.hideMerman;
+                }
+                else
+                {
+                    player.accMerman = true;
+                    player.hideMerman = hideMerman;
+                }
+            }
         }
     }
 }
