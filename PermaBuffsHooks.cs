@@ -5,12 +5,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using System.Linq.Expressions;
 using System.Collections.Generic;
-using PermaBuffs;
 using Terraria.ModLoader.Core;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Xna.Framework;
-using Terraria.Map;
-using System.ComponentModel;
 
 namespace PermaBuffs
 {
@@ -224,6 +219,7 @@ namespace PermaBuffs
     /// </summary>
     public partial class PermaBuffsPostBuffUpdateHooks
     {
+        #region Vanilla
         public static void PotionSickness(Player p, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             buffType = BuffID.PotionSickness;
@@ -236,7 +232,10 @@ namespace PermaBuffs
             else if (buffStatus == (int)BuffStatus.IsPermaBuffed) // Player can never heal unless the permabuff is disabled
                 p.potionDelay = Math.Max(p.potionDelay, 2);
         }
-       
+        #endregion
+
+        #region tsorcRevamp
+
         public static void NeverBuffCurse(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
             // Use the helper class to set the buffType
@@ -320,6 +319,8 @@ namespace PermaBuffs
 
             PrivateAccess.TsorcRevamp.fracturingArmor = 0;
         }
+
+        #endregion
     }
 
     // This class is where the magic happens. It uses reflection to get accessors to otherwise private variables and compiles them so it's fast.

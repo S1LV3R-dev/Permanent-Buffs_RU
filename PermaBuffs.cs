@@ -48,7 +48,7 @@ namespace PermaBuffs
                     {
                         try
                         {
-                            if (!(method.ReturnType == typeof(void)))
+                            if (method.ReturnType != typeof(void))
                                 continue;
 
                             var methodParams = method.GetParameters();
@@ -374,11 +374,15 @@ namespace PermaBuffs
 
                     // Modified buffs can always be deleted regardless of what another mod returns
                     tryRemoveBuff = tryRemoveBuff || modPlayer.neverPermanent[buffType] || modPlayer.alwaysPermanent[buffType];
+
+                    // Manually removed buffs should also be removed from the list of always permanent buffs. 
+                    // This is for the sake of convienience.
+                    modPlayer.alwaysPermanent[buffType] = false;
                 }
 
                 // The buff has passed all other mod checks to be removed or is a neverBuff
                 if (tryRemoveBuff)
-                {
+                { 
                     Main.TryRemovingBuff(buffSlotOnPlayer, buffType);
 
                     // The buff was not deleted, force delete it
@@ -386,10 +390,6 @@ namespace PermaBuffs
                     {
                         player.DelBuff(buffSlotOnPlayer);
                     }
-
-                    // Manually removed buffs should also be removed from the list of always permanent buffs. 
-                    // This is for the sake of convienience.
-                    modPlayer.alwaysPermanent[buffType] = false; 
                 }
             }
             // The player is not moused over the buff
