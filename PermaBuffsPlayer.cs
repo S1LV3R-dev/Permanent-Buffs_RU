@@ -212,7 +212,7 @@ namespace PermaBuffs
 
                 if (PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
-                    BuffStatus status = BuffStatus.NotModified;
+                    int status = BuffStatus.NotModified;
 
                     if (alwaysPermanent[buff.type])
                         status = BuffStatus.IsPermaBuffed;
@@ -220,7 +220,7 @@ namespace PermaBuffs
                         status = BuffStatus.IsNeverBuffed;
 
                     foreach (BuffHook hook in PermaBuffs.preBuffUpdateHooks[buff.type])
-                        hook(player, ref buffSlot, (int)status, out int type);
+                        hook(player, ref buffSlot, status, out int type);
                 }
             }
         }
@@ -267,7 +267,7 @@ namespace PermaBuffs
                 // Call hooks
                 if (PermaBuffs.postBuffUpdateHooks[buff.type] != null)
                 {
-                    BuffStatus status = BuffStatus.NotModified;
+                    int status = BuffStatus.NotModified;
 
                     if (alwaysPermanent[buff.type])
                         status = BuffStatus.IsPermaBuffed;
@@ -275,7 +275,7 @@ namespace PermaBuffs
                         status = BuffStatus.IsNeverBuffed;
 
                     foreach (BuffHook hook in PermaBuffs.postBuffUpdateHooks[buff.type])
-                        hook(player, ref buffSlot, (int)status, out int type);
+                        hook(player, ref buffSlot, status, out int type);
                 }
             }
 
