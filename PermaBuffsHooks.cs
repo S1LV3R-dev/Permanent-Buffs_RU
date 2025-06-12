@@ -320,6 +320,22 @@ namespace PermaBuffs
             PrivateAccess.TsorcRevamp.fracturingArmor = 0;
         }
 
+        public static void PermaPhoenixRebirthBuff(Player player, ref int buffSlot, int status, out int buffType)
+        {
+            buffType = PrivateAccess.TsorcRevamp.phoenixRebirthBuffType;
+
+            if (player == null) return;
+            if (status != (int)BuffStatus.IsPermaBuffed) return;
+            if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
+
+            PrivateAccess.TsorcRevamp.phoenixSkull = true;
+
+            // Set the cooldown buff to never permanent so the revive goes through
+            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+            modPlayer.neverPermanent[PrivateAccess.TsorcRevamp.phoenixRebirthCooldownBuffType] = true;
+            modPlayer.alwaysPermanent[PrivateAccess.TsorcRevamp.phoenixRebirthCooldownBuffType] = false;
+        }
+
         #endregion
     }
 
@@ -342,11 +358,13 @@ namespace PermaBuffs
             internal const string keyCurseLevel = "CurseLevel";
             internal const string keyPowerfulCurseLevel = "PowerfulCurseLevel";
             internal const string keyFracturingArmor = "FracturingArmor";
+            internal const string keyPhoenixSkull = "PhoenixSkull";
             public static bool curseActive { get { return (bool)vars[keyCurseActive].Get(myPlayer); } set { vars[keyCurseActive].Set(myPlayer, value); } }
             public static bool powerfulCurseActive { get { return (bool)vars[keyPowerfulCurseActive].Get(myPlayer); } set { vars[keyPowerfulCurseActive].Set(myPlayer, value); } }
             public static int curseLevel { get { return (int)vars[keyCurseLevel].Get(myPlayer); } set { vars[keyCurseLevel].Set(myPlayer, value); } }
             public static int powerfulCurseLevel { get { return (int)vars[keyPowerfulCurseLevel].Get(myPlayer); } set { vars[keyPowerfulCurseLevel].Set(myPlayer, value); } }
             public static int fracturingArmor { get { return (int)vars[keyFracturingArmor].Get(myPlayer); } set { vars[keyFracturingArmor].Set(myPlayer, value); } }
+            public static bool phoenixSkull { get { return (bool)vars[keyPhoenixSkull].Get(myPlayer); } set { vars[keyPhoenixSkull].Set(myPlayer, value); } }
 
             internal static ModPlayer myPlayer;
             internal static Type playerType;
@@ -356,6 +374,8 @@ namespace PermaBuffs
             internal static int curseBuildupBuffTypeCached = -1;
             internal static int powerfulCurseBuildupBuffTypeCached = -1;
             internal static int fracturingArmorBuffTypeCached = -1;
+            internal static int phoenixRebirthBuffTypeCached = -1;
+            internal static int phoenixRebirthCooldownBuffTypeCached = -1;
             public static int curseBuffType
             {
                 get
@@ -403,6 +423,24 @@ namespace PermaBuffs
                     if (fracturingArmorBuffTypeCached == -1)
                         CacheLoadedModBuffTypes();
                     return fracturingArmorBuffTypeCached;
+                }
+            }
+            public static int phoenixRebirthBuffType
+            {
+                get
+                {
+                    if (phoenixRebirthBuffTypeCached == -1)
+                        CacheLoadedModBuffTypes();
+                    return phoenixRebirthBuffTypeCached;
+                }
+            }
+            public static int phoenixRebirthCooldownBuffType
+            {
+                get
+                {
+                    if (phoenixRebirthCooldownBuffTypeCached == -1)
+                        CacheLoadedModBuffTypes();
+                    return phoenixRebirthCooldownBuffTypeCached;
                 }
             }
         }
@@ -523,7 +561,7 @@ namespace PermaBuffs
                 TsorcRevamp.playerType = SetModAccessKeys(TsorcRevamp.ModName, TsorcRevamp.playerClass,
                 [
                     TsorcRevamp.keyCurseActive, TsorcRevamp.keyPowerfulCurseActive, TsorcRevamp.keyCurseLevel,
-                    TsorcRevamp.keyPowerfulCurseLevel, TsorcRevamp.keyFracturingArmor
+                    TsorcRevamp.keyPowerfulCurseLevel, TsorcRevamp.keyFracturingArmor, TsorcRevamp.keyPhoenixSkull
                 ]);
 
                 Calamity.playerType = SetModAccessKeys(Calamity.ModName, Calamity.playerClass,
@@ -588,6 +626,16 @@ namespace PermaBuffs
                 TsorcRevamp.fracturingArmorBuffTypeCached = 0;
             else
                 TsorcRevamp.fracturingArmorBuffTypeCached = fracturingArmorBuff.Type;
+
+            if (!ModContent.TryFind(TsorcRevamp.ModName, "PhoenixRebirthBuff", out ModBuff phoenixRebirthBuff))
+                TsorcRevamp.phoenixRebirthBuffTypeCached = 0;
+            else
+                TsorcRevamp.phoenixRebirthBuffTypeCached = phoenixRebirthBuff.Type;
+
+            if (!ModContent.TryFind(TsorcRevamp.ModName, "PhoenixRebirthCooldown", out ModBuff phoenixRebirthCooldown))
+                TsorcRevamp.phoenixRebirthCooldownBuffTypeCached = 0;
+            else
+                TsorcRevamp.phoenixRebirthCooldownBuffTypeCached = phoenixRebirthCooldown.Type;
 
 
             // Calamity mod

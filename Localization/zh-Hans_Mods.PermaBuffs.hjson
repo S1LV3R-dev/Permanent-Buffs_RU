@@ -46,7 +46,7 @@ Configs: {
 		}
 
 		clearNeverBuffsOnDeathOrLoad: {
-			Label:在死亡或重载时清除[c/a739de:永不生效]增益
+			Label: 在死亡或重载时清除[c/a739de:永不生效]增益
 			Tooltip:
 				'''
 				启用此选项后 
