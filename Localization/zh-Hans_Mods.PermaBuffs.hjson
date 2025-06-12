@@ -1,14 +1,14 @@
 Configs: {
 	PermaBuffsConfig: {
-		DisplayName: PermaBuffs设置
+		DisplayName: Permanent Buffs设置
 
 		keepStationBuffs: {
-			Tooltip: 从利器站、施法桌等增益站获得的增益效果可以在角色死亡后仍然持续
+			Tooltip: 从利器站、施法桌等增益站获得的增益效果将永久存在
 			Label: 永久增益站buff
 		}
 
 		keepBannerBuffs: {
-			Tooltip: 永久保留旗帜的增益效果
+			Tooltip: 永久保留旗帜赋予的增益效果
 			Label: 永久旗帜增益
 		}
 
@@ -36,7 +36,9 @@ Configs: {
 			Tooltip:
 				'''
 				启用此选项后
-				使用由反射功能提供的实验性模组兼容功能，但可能会遇到更多错误
+				使用由反射功能提供的实验性跨模组兼容功能
+				允许各种[c/fff200:永久生效]/[c/a739de:永不生效]增益效果正确应用于原本不会应用的地方
+				当前支持的模组：[c/ff0000：（实验）灾厄]，[c/ffff00：（稳定）红云物语]
 				请将相关问题提交到作者的 GitHub 页面或 Steam Workshop 页面
 				[c/f11414:启用此功能需要重新加载才能生效]
 				'''
@@ -44,24 +46,26 @@ Configs: {
 		}
 
 		clearNeverBuffsOnDeathOrLoad: {
-			// Label: Clear NeverBuffs On Death Or Load
-			/* Tooltip:
+			Label:在死亡或重载时清除[c/a739de:永不生效]增益
+			Tooltip:
 				'''
-				By toggling this on, you disable any neverBuffs from being loaded upon death or spawn.
-				This is useful if you wish to reset your neverBuffs.
-				''' */
+				启用此选项后 
+				在死亡或重生加载时，你可以禁用任何[c/a739de:永不生效]增益
+				如果你想重置[c/a739de:永不生效]增益 这会十分有用
+				'''
 		}
 
 		clearPermaBuffsOnDeathOrLoad: {
-			// Label: Clear Permanent Buffs On Death Or Load
-			/* Tooltip:
+			Label: 在死亡或重载时清除[c/fff200:永久生效]增益
+			Tooltip:
 				'''
-				By toggling this on, you disable any permaBuffs from being loaded upon death or spawn.
-				This is useful if you wish to reset your permaBuffs or only benefit from the permanent duration.
-				''' */
+				启用此选项后  
+				在死亡或重生加载时，你可以禁用任何[c/fff200:永久生效]增益
+				如果你想重置[c/fff200:永久生效]增益或仅想在一段时间内得到[c/fff200:永久生效]增益 这会十分有用
+				'''
 		}
 
-		// Headers.Advanced: "[c/9370db:Advanced]"
+		Headers.Advanced: "[c/9370db:高级选项]"
 	}
 }
 
