@@ -344,11 +344,19 @@ namespace PermaBuffs
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
 
             PrivateAccess.TsorcRevamp.phoenixSkull = true;
+        }
 
-            // Set the cooldown buff to never permanent so the revive goes through
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-            modPlayer.neverPermanent[PrivateAccess.TsorcRevamp.phoenixRebirthCooldownBuffType] = true;
-            modPlayer.alwaysPermanent[PrivateAccess.TsorcRevamp.phoenixRebirthCooldownBuffType] = false;
+        public static void DelPhoenixRebirthCooldown(Player player, ref int buffSlot, int buffStatus, out int buffType)
+        {
+            buffType = PrivateAccess.TsorcRevamp.phoenixRebirthCooldownBuffType;
+
+            if (player == null) return;
+
+            var modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+            if (!modPlayer.alwaysPermanent[PrivateAccess.TsorcRevamp.phoenixRebirthBuffType]) return;
+
+            player.DelBuff(buffSlot);
+            buffSlot--;
         }
 
         public static void PermaTitaniumStormShunpoBuff(Player player, ref int buffSlot, int status, out int buffType)
@@ -379,7 +387,6 @@ namespace PermaBuffs
         {
             public const string ModName = "tsorcRevamp";
             internal const string playerClass = "tsorcRevampPlayer";
-            // These let you acess the variables within the other mod. They require an instance to access mod data by string. Must call SetupPlayerInstance(Player) before use
             internal const string keyCurseActive = "CurseActive";
             internal const string keyPowerfulCurseActive = "powerfulCurseActive";
             internal const string keyCurseLevel = "CurseLevel";
@@ -387,6 +394,9 @@ namespace PermaBuffs
             internal const string keyFracturingArmor = "FracturingArmor";
             internal const string keyPhoenixSkull = "PhoenixSkull";
             internal const string keyShunpo = "Shunpo";
+
+            // These let you access the variables within the other mod. They require an instance to access mod data by string. Must call SetupPlayerInstance(Player) before use
+            // Otherwise a null reference will be thrown. These properties are unsafe to access before setting up the player with the current instance.
             public static bool curseActive { get { return (bool)vars[keyCurseActive].Get(myPlayer); } set { vars[keyCurseActive].Set(myPlayer, value); } }
             public static bool powerfulCurseActive { get { return (bool)vars[keyPowerfulCurseActive].Get(myPlayer); } set { vars[keyPowerfulCurseActive].Set(myPlayer, value); } }
             public static int curseLevel { get { return (int)vars[keyCurseLevel].Get(myPlayer); } set { vars[keyCurseLevel].Set(myPlayer, value); } }
@@ -406,6 +416,8 @@ namespace PermaBuffs
             internal static int phoenixRebirthBuffTypeCached = -1;
             internal static int phoenixRebirthCooldownBuffTypeCached = -1;
             internal static int titaniumStormShunpoBuffTypeCached = -1;
+
+            // The buff type properties are safe to acess before setting up the player instance - they will return 0 if the mod isn't loaded.
             public static int curseBuffType
             {
                 get

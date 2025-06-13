@@ -66,6 +66,11 @@ Configs: {
 		}
 
 		Headers.Advanced: "[c/9370db:高级选项]"
+
+		autoDeleteNeverBuffs: {
+			// Tooltip: ""
+			// Label: auto Delete Never Buffs
+		}
 	}
 }
 

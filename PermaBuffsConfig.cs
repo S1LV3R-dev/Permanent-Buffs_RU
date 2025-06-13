@@ -37,6 +37,9 @@ namespace PermaBuffs
 
         [Header("Advanced")]
 
+        [DefaultValue(false)]
+        public bool autoDeleteNeverBuffs;
+
         /// <summary>
         /// When set to true, you can use experimental mod functionality features powered by reflection but might encounter more bugs. Please report any issues to my github or steam workshop page.
         /// </summary>

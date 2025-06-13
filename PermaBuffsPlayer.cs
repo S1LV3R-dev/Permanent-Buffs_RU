@@ -165,6 +165,8 @@ namespace PermaBuffs
             if (Main.netMode == NetmodeID.Server)
                 return;
 
+            PermaBuffsConfig config = PermaBuffsConfig.instance;
+
             minionSlots = 0f;
 
             // Golden queue manager. 
@@ -181,27 +183,27 @@ namespace PermaBuffs
             Player player = Main.LocalPlayer;
             if (!player.dead) pendingBuffs.Clear();
 
-            // Re apply permanent buffs if they're somehow missing
             for (int buffType = 0; buffType < BuffLoader.BuffCount; buffType++)
             {
-                if (!alwaysPermanent[buffType])
-                    continue;
-
-                // i in this case is the buffType, since alwaysPermanent is indexed by buffType
-                int buffSlotOnPlayer = player.FindBuffIndex(buffType);
-
-                // if the buff was not found and we can re-add the buff
-                if (buffSlotOnPlayer == -1)
+                // Re apply permanent buffs if they're somehow missing
+                if (alwaysPermanent[buffType])
                 {
-                    BuffInfo buff = new BuffInfo(buffType, TimeForGolden);
-                    // Re-add it
-                    buff.AddBuffToPlayer(this, player);
-                }
-                else if (player.slotsMinions + minionIncrease <= maxMinions && buffItemIDs[buffType] != 0)
-                {
-                    BuffInfo buff = new BuffInfo(buffType, player.buffTime[buffSlotOnPlayer]);
-                    // more minions
-                    buff.AddBuffToPlayer(this, player);
+                    // i in this case is the buffType, since alwaysPermanent is indexed by buffType
+                    int buffSlotOnPlayer = player.FindBuffIndex(buffType);
+
+                    // if the buff was not found and we can re-add the buff
+                    if (buffSlotOnPlayer == -1)
+                    {
+                        BuffInfo buff = new BuffInfo(buffType, TimeForGolden);
+                        // Re-add it
+                        buff.AddBuffToPlayer(this, player);
+                    }
+                    else if (player.slotsMinions + minionIncrease <= maxMinions && buffItemIDs[buffType] != 0)
+                    {
+                        BuffInfo buff = new BuffInfo(buffType, player.buffTime[buffSlotOnPlayer]);
+                        // more minions
+                        buff.AddBuffToPlayer(this, player);
+                    }
                 }
             }
 
@@ -245,8 +247,15 @@ namespace PermaBuffs
                 {
                     if (!alwaysPermanent[buff.type])
                         continue;
-                    else
+                    else // if the buff is always permanent and it's not active, reactivate it and give it more time.
                         player.buffTime[buffSlot] = 2;
+                }
+
+                if (neverPermanent[buff.type] && config.autoDeleteNeverBuffs)
+                {
+                    player.DelBuff(buffSlot);
+                    buffSlot--;
+                    continue;
                 }
 
                 // Populate saved banners with the banners on screen if banners are active
@@ -273,7 +282,7 @@ namespace PermaBuffs
                         status = BuffStatus.IsPermaBuffed;
                     else if (neverPermanent[buff.type])
                         status = BuffStatus.IsNeverBuffed;
-
+                    
                     foreach (BuffHook hook in PermaBuffs.postBuffUpdateHooks[buff.type])
                         hook(player, ref buffSlot, status, out int type);
                 }
@@ -416,6 +425,7 @@ namespace PermaBuffs
             IList<string> neverList = tag.GetList<string>("NeverList");
             IList<string> bannerList = tag.GetList<string>("BannerList");
             IList<string> itemList = tag.GetList<string>("ItemList");
+            IList<string> flagList = tag.GetList<string>("FlagList");
             PermaBuffsConfig config = PermaBuffsConfig.instance;
 
             try
@@ -474,6 +484,12 @@ namespace PermaBuffs
                 if (!buffCountDifferent || BuffInfo.IsVanilla(buffType))
                     buffItemIDs[buffType] = itemType;
             }
+
+            if (flagList.Contains("HideWerewolf"))
+                hideWerewolf = true;
+
+            if (flagList.Contains("HideMerman"))
+                hideMerman = true;
         }
         /// <summary>
         /// Saves the buffs the player had before saving and quitting
@@ -486,9 +502,11 @@ namespace PermaBuffs
             List<string> neverList = new List<string>();
             List<string> bannerList = new List<string>();
             List<string> itemList = new List<string>();
+            List<string> flagList = new List<string>();
 
             Player player = Main.LocalPlayer;
 
+            // Save buffs
             for (int i = 0; i < Player.MaxBuffs; i++)
             {
                 BuffInfo buff = new BuffInfo(player.buffType[i], player.buffTime[i]);
@@ -499,6 +517,7 @@ namespace PermaBuffs
                 buffs.Add(buff.ToString());
             }
 
+            // Save permabuffs and neverbuffs
             for (int i = 0; i < BuffLoader.BuffCount; i++)
             {
                 if (alwaysPermanent[i])
@@ -516,6 +535,7 @@ namespace PermaBuffs
                 }
             }
 
+            // Save banners
             for (int i = 0; i < NPCLoader.NPCCount; i++)
             {
                 if (activeBanners[i])
@@ -524,11 +544,18 @@ namespace PermaBuffs
                 }
             }
 
+            // Save boolean flags
+            if (hideWerewolf)
+                flagList.Add("HideWerewolf");
+            if (hideMerman)
+                flagList.Add("HideMerman");
+
             tag.Add("Buffs", buffs);
             tag.Add("PermaList", permaList);
             tag.Add("NeverList", neverList);
             tag.Add("BannerList", bannerList);
             tag.Add("ItemList", itemList);
+            tag.Add("FlagList", flagList);
             tag.Add("CurrentBuffTotal", BuffLoader.BuffCount.ToString());
             tag.Add("CurrentNPCTotal", NPCLoader.NPCCount.ToString());
         }
