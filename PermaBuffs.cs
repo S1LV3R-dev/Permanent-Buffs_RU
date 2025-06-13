@@ -25,12 +25,14 @@ namespace PermaBuffs
     {
         public static List<BuffHook>[] postBuffUpdateHooks { get; internal set; }
         public static List<BuffHook>[] preBuffUpdateHooks { get; internal set; }
+        public static List<BuffHook>[] postPlayerUpdateHooks { get; internal set; }
 
         public static On_Player.orig_UpdateArmorSets updateArmor;
         public override void PostSetupContent()
         {
             preBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             postBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
+            postPlayerUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             var config = PermaBuffsConfig.instance;
 
             foreach (Mod mod in ModLoader.Mods)
@@ -41,7 +43,10 @@ namespace PermaBuffs
 
                 foreach (Type hookClassType in AssemblyManager.GetLoadableTypes(mod.Code))
                 {
-                    if (!(hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name || hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name))
+                    if (!(hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name || 
+                        hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name ||
+                        hookClassType.Name == typeof(PermaBuffsPostPlayerUpdateHooks).Name
+                        ))
                         continue;
 
                     foreach (var method in hookClassType.GetMethods())
@@ -105,6 +110,7 @@ namespace PermaBuffs
 
             PermaBuffsPlayer.alwaysPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Always Permanent", Microsoft.Xna.Framework.Input.Keys.P);
             PermaBuffsPlayer.neverPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Never Permanent", Microsoft.Xna.Framework.Input.Keys.N);
+            PermaBuffsPlayer.autoDeleteKey = KeybindLoader.RegisterKeybind(this, "Auto Delete NeverBuff", Microsoft.Xna.Framework.Input.Keys.Delete);
         }
 
         internal static void MakeArmorSetBuffsPermanent(On_Player.orig_UpdateArmorLights orig, Player player)

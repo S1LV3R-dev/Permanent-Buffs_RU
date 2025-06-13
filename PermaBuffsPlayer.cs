@@ -20,6 +20,7 @@ using Terraria.ModLoader.Config;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Terraria.Enums;
 using Terraria.GameContent.UI.Minimap;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 namespace PermaBuffs
@@ -54,11 +55,14 @@ namespace PermaBuffs
         public bool[] goldenQueue;
         public bool[] alwaysPermanent;
         public bool[] neverPermanent;
+        public bool[] autoDelete;
         public bool[] activeBanners;
         public int[] buffItemIDs;
 
         public bool alwaysPermanentKeyPressed = false;
         public bool neverPermanentKeyPressed = false;
+        public bool autoDeleteKeyPressed = false;
+        public bool tryAutoDelete = false;
         public bool permaTooltipSeen = false;
         public bool neverTooltipSeen = false;
 
@@ -85,6 +89,7 @@ namespace PermaBuffs
 
         public static ModKeybind alwaysPermanentKey;
         public static ModKeybind neverPermanentKey;
+        public static ModKeybind autoDeleteKey;
 
         public override void Initialize()
         {
@@ -100,7 +105,7 @@ namespace PermaBuffs
 
         public void CheckToggleKeys(BuffInfo buff, int buffSlot)
         {
-            if (!(alwaysPermanentKeyPressed || neverPermanentKeyPressed))
+            if (!(alwaysPermanentKeyPressed || neverPermanentKeyPressed || autoDeleteKeyPressed))
             {
                 return;
             }
@@ -126,31 +131,43 @@ namespace PermaBuffs
                 if (buffItemIDs[buff.type] != 0 && neverPermanent[buff.type])
                     Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NeverBuffSummon"));
             }
+            else if (autoDeleteKeyPressed)
+            {
+                if (neverPermanent[buff.type])
+                {
+                    // only allow auto deletion on neverbuffs to prevent mistakes
+                    autoDelete[buff.type] = true;
+                    // clear from never permanent since it being there is now junk data
+                    neverPermanent[buff.type] = false;
+                }
+                else
+                {
+                    Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.AutoDeleteRequirement"));
+                }
+            }
 
             alwaysPermanentKeyPressed = false;
             neverPermanentKeyPressed = false;
+            autoDeleteKeyPressed = false;
             goldenQueue[buff.type] = false;
         }
 
         public override void ProcessTriggers(TriggersSet triggersSet)
         {
             if (alwaysPermanentKey.JustPressed)
-            {
                 alwaysPermanentKeyPressed = true;
-            }
             else if (alwaysPermanentKey.JustReleased)
-            {
                 alwaysPermanentKeyPressed = false;
-            }
 
             if (neverPermanentKey.JustPressed)
-            {
                 neverPermanentKeyPressed = true;
-            }
             else if (neverPermanentKey.JustReleased)
-            {
                 neverPermanentKeyPressed = false;
-            }
+
+            if (autoDeleteKey.JustPressed)
+                autoDeleteKeyPressed = true;
+            else if (autoDeleteKey.JustReleased)
+                autoDeleteKeyPressed = false;
         }
 
         public override void SetStaticDefaults()
@@ -212,6 +229,13 @@ namespace PermaBuffs
             {
                 BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
 
+                if (autoDelete[buff.type])
+                {
+                    player.DelBuff(buffSlot);
+                    buffSlot--;
+                    continue;
+                }
+
                 if (PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
                     int status = BuffStatus.NotModified;
@@ -251,7 +275,7 @@ namespace PermaBuffs
                         player.buffTime[buffSlot] = 2;
                 }
 
-                if (neverPermanent[buff.type] && config.autoDeleteNeverBuffs)
+                if (autoDelete[buff.type])
                 {
                     player.DelBuff(buffSlot);
                     buffSlot--;
@@ -317,7 +341,10 @@ namespace PermaBuffs
             if (config.clearPermaBuffsOnDeathOrLoad)
                 alwaysPermanent = new bool[BuffLoader.BuffCount];
             if (config.clearNeverBuffsOnDeathOrLoad)
+            {
                 neverPermanent = new bool[BuffLoader.BuffCount];
+                autoDelete = new bool[BuffLoader.BuffCount];
+            }
 
             for (int i = 0; i < Player.MaxBuffs; i++)
             {
@@ -363,7 +390,10 @@ namespace PermaBuffs
             if (config.clearPermaBuffsOnDeathOrLoad)
                 alwaysPermanent = new bool[BuffLoader.BuffCount];
             if (config.clearNeverBuffsOnDeathOrLoad)
+            {
                 neverPermanent = new bool[BuffLoader.BuffCount];
+                autoDelete = new bool[BuffLoader.BuffCount];
+            }
 
             for (int i = 0; i < pendingBuffs.Count && i < Player.MaxBuffs; i++)
             {
@@ -393,8 +423,45 @@ namespace PermaBuffs
 
         public override void PostUpdate()
         {
-            if (Main.netMode != NetmodeID.Server)
-                maxMinions = Main.LocalPlayer.maxMinions;
+            if (Main.netMode == NetmodeID.Server)
+                return;
+
+            Player player = Player;
+            maxMinions = player.maxMinions;
+
+            for (int buffSlot = 0; buffSlot < Player.MaxBuffs; buffSlot++)
+            {
+                BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
+
+                if (!buff.isActive)
+                {
+                    if (!alwaysPermanent[buff.type])
+                        continue;
+                    else // if the buff is always permanent and it's not active, reactivate it and give it more time.
+                        player.buffTime[buffSlot] = 2;
+                }
+
+                if (autoDelete[buff.type])
+                {
+                    player.DelBuff(buffSlot);
+                    buffSlot--;
+                    continue;
+                }
+
+                // Call hooks
+                if (PermaBuffs.postPlayerUpdateHooks[buff.type] != null)
+                {
+                    int status = BuffStatus.NotModified;
+
+                    if (alwaysPermanent[buff.type])
+                        status = BuffStatus.IsPermaBuffed;
+                    else if (neverPermanent[buff.type])
+                        status = BuffStatus.IsNeverBuffed;
+
+                    foreach (BuffHook hook in PermaBuffs.postPlayerUpdateHooks[buff.type])
+                        hook(player, ref buffSlot, status, out int type);
+                }
+            }
         }
 
         public static void ParseTypeList(IList<string> list, ref bool[] array, bool countDifferent, int limit, ref bool errorTracker)
@@ -425,6 +492,7 @@ namespace PermaBuffs
             IList<string> neverList = tag.GetList<string>("NeverList");
             IList<string> bannerList = tag.GetList<string>("BannerList");
             IList<string> itemList = tag.GetList<string>("ItemList");
+            IList<string> autoDeleteList = tag.GetList<string>("AutoDeleteList");
             IList<string> flagList = tag.GetList<string>("FlagList");
             PermaBuffsConfig config = PermaBuffsConfig.instance;
 
@@ -449,6 +517,8 @@ namespace PermaBuffs
 
             ParseTypeList(permaList, ref alwaysPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
             ParseTypeList(neverList, ref neverPermanent, buffCountDifferent, BuffID.Count, ref tryAddModBuff);
+            bool dontCare = false;
+            ParseTypeList(autoDeleteList, ref autoDelete, buffCountDifferent, BuffID.Count, ref dontCare);
             
             try
             {

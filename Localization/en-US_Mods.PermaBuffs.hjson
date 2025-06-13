@@ -60,16 +60,6 @@ Configs: {
 		}
 
 		Headers.Advanced: "[c/9370db:Advanced]"
-
-		autoDeleteNeverBuffs: {
-			Tooltip: 
-				'''
-				By toggling this on, debuffs will be automatically deleted when NeverBuffed.
-				This can be useful as some code checks for the presence of the buff itself rather than any associated stat.
-				However, this also makes it difficult to un-set something as a NeverBuff so use this with caution.
-				'''
-			Label: Auto-Delete NeverBuffs
-		}
 	}
 }
 
@@ -113,6 +103,11 @@ Errors: {
 		[c/ff0000:This means you will not be able to easily undo the Neverbuff icon change if the buff is ever removed while Neverbuffed.]
 		[c/ff0000:It is recommended that you untoggle this NeverBuff.]
 		'''
+	AutoDeleteRequirement:
+		'''
+		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safegaurd against accidental deletions.]
+		[c/ff0000:If you are sure you want this buff to be auto-deleted, please toggle it as a NeverBuff and try again.]
+		'''
 }
 
 Keybinds: {
@@ -124,4 +119,9 @@ Keybinds: {
 	}
 
 	NotBound: ": <Not bound, set it in your control settings>"
+
+	"Auto Delete NeverBuff": {
+		DisplayName: Auto Delete NeverBuff
+		Tooltip: Press this key along with left-clicking a NeverBuffed icon to flag it for deletion.
+	}
 }

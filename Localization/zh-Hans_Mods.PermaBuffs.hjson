@@ -66,11 +66,6 @@ Configs: {
 		}
 
 		Headers.Advanced: "[c/9370db:高级选项]"
-
-		autoDeleteNeverBuffs: {
-			// Tooltip: ""
-			// Label: auto Delete Never Buffs
-		}
 	}
 }
 
@@ -116,6 +111,11 @@ Errors: {
 		[c/ff0000:这意味着如果增益效果在被设置为“永不生效增益”后被移除，你将无法轻易撤销“永不生效增益”图标更改]
 		[c/ff0000:建议你不要要将召唤物切换为 “永不生效增益” ]
 		'''
+	/* AutoDeleteRequirement:
+		'''
+		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safegaurd against accidental deletions.]
+		[c/ff0000:If you are sure you want this buff to be auto-deleted, please toggle it as a NeverBuff and try again.]
+		''' */
 }
 
 Keybinds: {
@@ -127,4 +127,9 @@ Keybinds: {
 	}
 
 	NotBound: ": <未绑定，请在控键设置中进行绑定>"
+
+	"Auto Delete NeverBuff": {
+		// DisplayName: Auto Delete NeverBuff
+		// Tooltip: Press this key along with left-clicking a NeverBuffed icon to flag it for deletion.
+	}
 }
