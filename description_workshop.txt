@@ -11,6 +11,7 @@ Neverbuffs are indicated by a Purple Border around the buff icon.
 Both Permabuffs and Neverbuffs can be toggled by hovering the mouse over the buff icon and pressing their respective keybinds.
 
 This mod should be compatible with most other mod buff and does not change any behaviour unless the config options are enabled. Some additional features are:
+- Keybind to flag a NeverBuff for auto deletion - this means the buff will not ever be added to the player again. This way they won't take up a buff slot if re-added.
 - Option to selectively apply death/save&quit persistence to station buffs, so you don't have to click the stations every time you respawn.
 - Option to selectively apply death/save&quit persistence to banners, so that they remain with you wherever you go once placed.
 - Option to disable visuals on affected buff icons.

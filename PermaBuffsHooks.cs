@@ -243,9 +243,11 @@ namespace PermaBuffs
             buffType = BuffID.TitaniumStorm;
 
             if (player == null) return;
-            if (buffStatus != BuffStatus.IsPermaBuffed) return;
 
-            player.onHitTitaniumStorm = true;
+            if (buffStatus == BuffStatus.IsPermaBuffed)
+                player.onHitTitaniumStorm = true;
+            else if (buffStatus == BuffStatus.IsNeverBuffed)
+                player.onHitTitaniumStorm = false;
         }
         #endregion
 
@@ -259,16 +261,23 @@ namespace PermaBuffs
             if (player == null)
                 return;
 
-            // Custom logic only applies during neverbuff
-            if (buffStatus != BuffStatus.IsNeverBuffed)
+            // Custom logic only applies when never/perma buffed
+            if (buffStatus == BuffStatus.NotModified)
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName))
                 return; // There was an error getting the values using reflection
 
-            PrivateAccess.TsorcRevamp.curseActive = false;
-            PrivateAccess.TsorcRevamp.curseLevel = 0;
+            if (buffStatus == BuffStatus.IsPermaBuffed)
+            {
+                PrivateAccess.TsorcRevamp.curseActive = true;
+            }
+            else // It's neverbuffed
+            {
+                PrivateAccess.TsorcRevamp.curseActive = false;
+                PrivateAccess.TsorcRevamp.curseLevel = 0;
+            }
         }
         public static void NeverBuffPowerfulCurse(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
         {
@@ -279,15 +288,22 @@ namespace PermaBuffs
                 return;
 
             // Custom logic only applies during neverbuff
-            if (buffStatus != BuffStatus.IsNeverBuffed)
+            if (buffStatus == BuffStatus.NotModified)
                 return;
 
             // This is needed to properly modify the instance values. Otherwise null reference exeption thrown.
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName))
                 return; // There was an error getting the values using reflection
 
-            PrivateAccess.TsorcRevamp.powerfulCurseActive = false;
-            PrivateAccess.TsorcRevamp.powerfulCurseLevel = 0;
+            if (buffStatus == BuffStatus.IsPermaBuffed)
+            {
+                PrivateAccess.TsorcRevamp.powerfulCurseActive = true;
+            }
+            else // It's neverbuffed
+            {
+                PrivateAccess.TsorcRevamp.powerfulCurseActive = false;
+                PrivateAccess.TsorcRevamp.powerfulCurseLevel = 0;
+            }
         }
         // Curse buildup shouldn't exist if the curse is neverbuffed
         public static void RemoveCurseBuildup(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
@@ -367,7 +383,7 @@ namespace PermaBuffs
             if (status != BuffStatus.IsPermaBuffed) return;
             if (!PrivateAccess.TrySetupPlayerInstance(player, PrivateAccess.TsorcRevamp.ModName)) return;
 
-            // Shunpo is a part of the buff in tsorcRevamp, the player can never buff shunpo cooldown manually if they want no cooldowns on the blink
+            // Shunpo is the condition for TitaniumStorm in tsorcRevamp, the player can autodelete shunpo cooldown manually if they want no cooldowns on the blink
             PrivateAccess.TsorcRevamp.shunpo = true;
         }
 
