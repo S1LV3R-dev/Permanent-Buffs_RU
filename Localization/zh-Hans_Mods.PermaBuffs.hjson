@@ -113,7 +113,7 @@ Errors: {
 		'''
 	/* AutoDeleteRequirement:
 		'''
-		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safegaurd against accidental deletions.]
+		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safeguard against accidental deletions.]
 		[c/ff0000:If you are sure you want this buff to be auto-deleted, please toggle it as a NeverBuff and try again.]
 		''' */
 }

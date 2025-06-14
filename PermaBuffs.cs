@@ -25,14 +25,12 @@ namespace PermaBuffs
     {
         public static List<BuffHook>[] postBuffUpdateHooks { get; internal set; }
         public static List<BuffHook>[] preBuffUpdateHooks { get; internal set; }
-        public static List<BuffHook>[] postPlayerUpdateHooks { get; internal set; }
 
         public static On_Player.orig_UpdateArmorSets updateArmor;
         public override void PostSetupContent()
         {
             preBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             postBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
-            postPlayerUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             var config = PermaBuffsConfig.instance;
 
             foreach (Mod mod in ModLoader.Mods)
@@ -44,8 +42,7 @@ namespace PermaBuffs
                 foreach (Type hookClassType in AssemblyManager.GetLoadableTypes(mod.Code))
                 {
                     if (!(hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name || 
-                        hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name ||
-                        hookClassType.Name == typeof(PermaBuffsPostPlayerUpdateHooks).Name
+                        hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name 
                         ))
                         continue;
 
@@ -677,6 +674,14 @@ namespace PermaBuffs
                 // Skip applying the buff if it is a neverbuff
                 if (modPlayer.neverPermanent[buffType])
                 {
+                    // Delete it if it's queued for autodelete
+                    if (modPlayer.autoDelete[buffType])
+                    {
+                        player.buffImmune[buffType] = true;
+                        player.DelBuff(j);
+                        j--;
+                    }
+
                     continue;
                 }
 

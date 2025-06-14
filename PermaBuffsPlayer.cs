@@ -137,8 +137,6 @@ namespace PermaBuffs
                 {
                     // only allow auto deletion on neverbuffs to prevent mistakes
                     autoDelete[buff.type] = true;
-                    // clear from never permanent since it being there is now junk data
-                    neverPermanent[buff.type] = false;
                 }
                 else
                 {
@@ -229,13 +227,6 @@ namespace PermaBuffs
             {
                 BuffInfo buff = new BuffInfo(player.buffType[buffSlot], player.buffTime[buffSlot]);
 
-                if (autoDelete[buff.type])
-                {
-                    player.DelBuff(buffSlot);
-                    buffSlot--;
-                    continue;
-                }
-
                 if (PermaBuffs.preBuffUpdateHooks[buff.type] != null)
                 {
                     int status = BuffStatus.NotModified;
@@ -273,13 +264,6 @@ namespace PermaBuffs
                         continue;
                     else // if the buff is always permanent and it's not active, reactivate it and give it more time.
                         player.buffTime[buffSlot] = 2;
-                }
-
-                if (autoDelete[buff.type])
-                {
-                    player.DelBuff(buffSlot);
-                    buffSlot--;
-                    continue;
                 }
 
                 // Populate saved banners with the banners on screen if banners are active
@@ -439,13 +423,6 @@ namespace PermaBuffs
                         continue;
                     else // if the buff is always permanent and it's not active, reactivate it and give it more time.
                         player.buffTime[buffSlot] = 2;
-                }
-
-                if (autoDelete[buff.type])
-                {
-                    player.DelBuff(buffSlot);
-                    buffSlot--;
-                    continue;
                 }
 
                 // Call hooks
