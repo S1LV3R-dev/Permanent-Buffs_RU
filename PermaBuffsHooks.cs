@@ -374,13 +374,6 @@ namespace PermaBuffs
         #endregion
     }
 
-    public partial class PermaBuffsPostPlayerUpdateHooks
-    {
-        #region Vanilla
-
-        #endregion
-    }
-
     // This class is where the magic happens. It uses reflection to get accessors to otherwise private variables and compiles them so it's fast.
     // This kind of hacky functionality is only suitable if you don't have access to the source code of another mod.
     // Its important that this helper class is static so it can be used freely in the Post/PreBuffUpdateLoops

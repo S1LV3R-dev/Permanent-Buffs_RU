@@ -424,20 +424,6 @@ namespace PermaBuffs
                     else // if the buff is always permanent and it's not active, reactivate it and give it more time.
                         player.buffTime[buffSlot] = 2;
                 }
-
-                // Call hooks
-                if (PermaBuffs.postPlayerUpdateHooks[buff.type] != null)
-                {
-                    int status = BuffStatus.NotModified;
-
-                    if (alwaysPermanent[buff.type])
-                        status = BuffStatus.IsPermaBuffed;
-                    else if (neverPermanent[buff.type])
-                        status = BuffStatus.IsNeverBuffed;
-
-                    foreach (BuffHook hook in PermaBuffs.postPlayerUpdateHooks[buff.type])
-                        hook(player, ref buffSlot, status, out int type);
-                }
             }
         }
 
