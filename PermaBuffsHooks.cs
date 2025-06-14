@@ -378,25 +378,6 @@ namespace PermaBuffs
     {
         #region Vanilla
 
-        public static void NoBuildingPatch(Player player, ref int buffSlotOnPlayer, int buffStatus, out int buffType)
-        {
-            buffType = BuffID.NoBuilding;
-
-            if (player == null) return;
-            if (buffStatus == BuffStatus.NotModified) return;
-
-            if (buffStatus == BuffStatus.IsPermaBuffed)
-            {
-                player.noBuilding = true;
-            }
-            else // its neverbuffed
-            {
-                player.noBuilding = false;
-                player.DelBuff(buffSlotOnPlayer);
-                buffSlotOnPlayer--;
-            }
-        }
-
         #endregion
     }
 

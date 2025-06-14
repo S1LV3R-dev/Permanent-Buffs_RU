@@ -630,6 +630,19 @@ namespace PermaBuffs
             tag.Add("CurrentNPCTotal", NPCLoader.NPCCount.ToString());
         }
 
+        public override void PostUpdateMiscEffects()
+        {
+            Player player = Player;
+
+            if (neverPermanent[BuffID.NoBuilding])
+            {
+                player.noBuilding = false;
+            }
+            else if (alwaysPermanent[BuffID.NoBuilding])
+            {
+                player.noBuilding = true;
+            }
+        }
         public override void PostUpdateEquips()
         {
             Player player = Player;
