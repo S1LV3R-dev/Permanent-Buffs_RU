@@ -644,6 +644,12 @@ namespace PermaBuffs
                     player.hideMerman = hideMerman;
                 }
             }
+
+            if (alwaysPermanent[BuffID.BallistaPanic])
+            {
+                player.setSquireT2 = true;
+                player.setSquireT3 = true;
+            }
         }
     }
 }
