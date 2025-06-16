@@ -126,16 +126,13 @@ namespace PermaBuffs
         /// </summary>
         /// <param name="modPlayer"></param>
         /// <returns></returns>
-        public readonly bool BuffSpawnsEntity(PermaBuffsPlayer modPlayer, out int id) { id = modPlayer.buffItemIDs[type]; return id > 0; }
+        public readonly bool BuffSpawnsEntity(PermaBuffsPlayer modPlayer, out int id) { id = modPlayer.buffItemIDs[type]; return id != 0; }
 
         /// <summary>
         /// Determines whether or not the buff should persist through death depending on the current config options.
         /// </summary>
         public bool shouldPersistThroughDeath(PermaBuffsPlayer modPlayer, PermaBuffsConfig config)
         {
-            if (!isActive)
-                return false;
-
             bool shouldPersist = false;
             shouldPersist = shouldPersist || (config.keepStationBuffs && isStationBuff);
             shouldPersist = shouldPersist || (config.keepBannerBuffs && type == BuffID.MonsterBanner);

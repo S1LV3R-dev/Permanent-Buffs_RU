@@ -656,12 +656,19 @@ namespace PermaBuffs
             if (Main.dontStarveWorld)
                 player.UpdateStarvingState(withEmote: true);
 
+            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
+
+            for (int j = 0; j < modPlayer.autoDelete.Length; j++)
+            {
+                if (modPlayer.autoDelete[j])
+                    player.buffImmune[j] = true;
+            }
+
             for (int j = 0; j < Player.MaxBuffs; j++)
             {
                 if (player.buffType[j] <= 0 || player.buffTime[j] <= 0)
                     continue;
 
-                PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
                 int buffType = player.buffType[j];
 
                 // Don't decrement the time if it is a permabuff
@@ -673,17 +680,7 @@ namespace PermaBuffs
 
                 // Skip applying the buff if it is a neverbuff
                 if (modPlayer.neverPermanent[buffType])
-                {
-                    // Delete it if it's queued for autodelete
-                    if (modPlayer.autoDelete[buffType])
-                    {
-                        player.buffImmune[buffType] = true;
-                        player.DelBuff(j);
-                        j--;
-                    }
-
                     continue;
-                }
 
                 #region TmodloaderCode
 

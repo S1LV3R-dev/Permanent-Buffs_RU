@@ -21,6 +21,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using Terraria.Enums;
 using Terraria.GameContent.UI.Minimap;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using FullSerializer;
 
 
 namespace PermaBuffs
@@ -310,14 +311,12 @@ namespace PermaBuffs
         /// <param name="damage"></param>
         /// <param name="hitDirection"></param>
         /// <param name="pvp"></param>
-        /// <param name="playSound"></param>
-        /// <param name="genDust"></param>
         /// <param name="damageSource"></param>
         /// <returns></returns>
-        public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust, ref PlayerDeathReason damageSource)
+        public override void Kill(double damage, int hitDirection, bool pvp, PlayerDeathReason damageSource)
         {
             if (Main.netMode == NetmodeID.Server)
-                return true;
+                return;
 
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             Player player = Main.LocalPlayer;
@@ -338,8 +337,6 @@ namespace PermaBuffs
                 if (buff.shouldPersistThroughDeath(this, config))
                     pendingBuffs.Add(buff);
             }
-
-            return true;
         }
 
         /// <summary>
