@@ -22,6 +22,7 @@ using Terraria.Enums;
 using Terraria.GameContent.UI.Minimap;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using FullSerializer;
+using Microsoft.CodeAnalysis;
 
 
 namespace PermaBuffs
@@ -66,15 +67,18 @@ namespace PermaBuffs
         public bool tryAutoDelete = false;
         public bool permaTooltipSeen = false;
         public bool neverTooltipSeen = false;
+        public bool autoTooltipSeen = false;
 
         public int viewingPermaTooltip = 0;
         public int viewingNeverTooltip = 0;
+        public int viewingAutoTooltip = 0;
         public float minionSlots;
         public float minionIncrease;
         public float maxMinions = 1f;
 
         public bool permaBound = false;
         public bool neverBound = false;
+        public bool autoBound = false;
         public bool buffCountDifferent = false;
         public bool tryAddModBuff;
         public bool npcCountDifferent = false;
@@ -112,6 +116,7 @@ namespace PermaBuffs
             }
 
             SoundEngine.PlaySound(SoundID.MenuTick);
+            Player player = Main.LocalPlayer;
 
             if (alwaysPermanentKeyPressed)
             {
@@ -120,8 +125,12 @@ namespace PermaBuffs
 
                 if (!alwaysPermanent[buff.type])
                 {
-                    Player player = Main.LocalPlayer;
                     player.buffTime[buffSlot] = Math.Max(buff.timeLeft, TimeForGolden);
+                }
+                else
+                {
+                    string toDisplay = Language.GetTextValue("Mods.PermaBuffs.CombatText.PermaBuffed", Lang.GetBuffName(buff.type));
+                    CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Yellow, text: toDisplay);
                 }
             }
             else if (neverPermanentKeyPressed)
@@ -129,8 +138,18 @@ namespace PermaBuffs
                 neverPermanent[buff.type] = !neverPermanent[buff.type];
                 alwaysPermanent[buff.type] = false;
 
-                if (buffItemIDs[buff.type] != 0 && neverPermanent[buff.type])
-                    Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NeverBuffSummon"));
+                if (neverPermanent[buff.type])
+                {
+                    if (buffItemIDs[buff.type] != 0)
+                    {
+                        Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NeverBuffSummon"));
+                    }
+                    else
+                    {
+                        string toDisplay = Language.GetTextValue("Mods.PermaBuffs.CombatText.NeverBuffed", Lang.GetBuffName(buff.type));
+                        CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Purple, text: toDisplay);
+                    }
+                }
             }
             else if (autoDeleteKeyPressed)
             {
@@ -138,6 +157,8 @@ namespace PermaBuffs
                 {
                     // only allow auto deletion on neverbuffs to prevent mistakes
                     autoDelete[buff.type] = true;
+                    string toDisplay = Language.GetTextValue("Mods.PermaBuffs.CombatText.AutoDelete", Lang.GetBuffName(buff.type));
+                    CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Red, text: toDisplay, dramatic: true);
                 }
                 else
                 {

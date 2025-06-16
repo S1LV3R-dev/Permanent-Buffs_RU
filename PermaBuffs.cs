@@ -323,8 +323,16 @@ namespace PermaBuffs
                 BuffInfo buff = new BuffInfo(player.buffType[buffSlotOnPlayer], player.buffTime[buffSlotOnPlayer]);
                 modPlayer.CheckToggleKeys(buff, buffSlotOnPlayer);
 
+                // Neverbuff tooltip contains autobound
+                if (modPlayer.neverPermanent[buffType])
+                {
+                    if (!modPlayer.autoTooltipSeen)
+                    {
+                        modPlayer.viewingAutoTooltip = modPlayer.autoBound ? buffType : 0;
+                    }
+                }
                 // If the buff is not modified
-                if (!(modPlayer.alwaysPermanent[buffType] || modPlayer.goldenQueue[buffType] || modPlayer.neverPermanent[buffType]))
+                else if (!(modPlayer.alwaysPermanent[buffType] || modPlayer.goldenQueue[buffType]))
                 {
                     // Sets the flag for the tooltip not to be shown after the player binds the key
                     if (!modPlayer.permaTooltipSeen)
@@ -398,6 +406,11 @@ namespace PermaBuffs
                 {
                     modPlayer.viewingNeverTooltip = 0;
                     modPlayer.neverTooltipSeen = autoHide;
+                }
+                if (modPlayer.viewingAutoTooltip == buffType)
+                {
+                    modPlayer.viewingAutoTooltip = 0;
+                    modPlayer.autoTooltipSeen = autoHide;
                 }
 
                 #region TmodloaderSourceCode3

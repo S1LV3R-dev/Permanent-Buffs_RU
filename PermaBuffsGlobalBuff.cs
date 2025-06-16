@@ -37,6 +37,7 @@ namespace PermaBuffs
             PermaBuffsPlayer modPlayer = Main.LocalPlayer.GetModPlayer<PermaBuffsPlayer>();
             PermaBuffsConfig config = PermaBuffsConfig.instance;
             bool modifiedIcon = true;
+            bool writeAutoDeleteTooltip = false;
 
             // Modify buff name if the icon is modified by the mod
 
@@ -48,7 +49,9 @@ namespace PermaBuffs
             else if (modPlayer.neverPermanent[type])
             {
                 buffName = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.NeverBuffPreBuffDisplayName") + buffName;
-                rare = ItemRarityID.Purple; 
+                rare = ItemRarityID.Purple;
+
+                writeAutoDeleteTooltip = true;
             }
             else if (type == BuffID.MonsterBanner)
             {
@@ -67,18 +70,33 @@ namespace PermaBuffs
             }
 
             // Dont modify tooltip for buffs that are already modified or banners.
-            if (modifiedIcon)
+            if (modifiedIcon && !writeAutoDeleteTooltip)
                 return;
 
             // Modify tooltips
 
             List<string> permaBuffKey = PermaBuffsPlayer.alwaysPermanentKey.GetAssignedKeys();
             List<string> neverBuffKey = PermaBuffsPlayer.neverPermanentKey.GetAssignedKeys();
+            List<string> autoDeleteKey = PermaBuffsPlayer.autoDeleteKey.GetAssignedKeys();
 
             modPlayer.permaBound = permaBuffKey.Count > 0;
             modPlayer.neverBound = neverBuffKey.Count > 0;
+            modPlayer.autoBound = autoDeleteKey.Count > 0;
 
-            if (!BuffInfo.IsActuallyADebuff(type)) // Show permabuff tooltips for Buffs
+            if (writeAutoDeleteTooltip)
+            {
+                if (!modPlayer.autoBound)
+                {
+                    string autoKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
+                    tip = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoKeybindAsString);
+                    modPlayer.autoTooltipSeen = false;
+                }
+                else if (!(modPlayer.autoTooltipSeen || config.autoHideKeybindTooltips))
+                {
+                    tip = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoDeleteKey[0]);
+                }
+            }
+            else if (!BuffInfo.IsActuallyADebuff(type)) // Show permabuff tooltips for Buffs
             {
                 if (!modPlayer.permaBound)
                 {
@@ -91,7 +109,7 @@ namespace PermaBuffs
                     tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.ToggleBuffAlwaysPermanent.Tooltip", permaBuffKey[0]);
                 }
             }
-            else // Show neverbuff tooltips for Debuffs
+            else  // Show neverbuff tooltips for Debuffs
             {
                 if (!modPlayer.neverBound)
                 {

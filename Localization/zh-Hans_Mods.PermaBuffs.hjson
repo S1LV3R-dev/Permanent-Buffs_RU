@@ -88,6 +88,15 @@ GlobalBuff: {
 			'''
 	}
 
+	AutoDeleteBuff: {
+		// DisplayName: Auto Delete
+		/* Tooltip:
+			'''
+			Press [c/ff0000:{0}] to automatically delete this buff every time it's added
+			You will have to reset your NeverBuffs in order to undo this if you change your mind
+			''' */
+	}
+
 	PermaBuffPreBuffDisplayName: "[c/ffff00:永久生效： ]"
 	NeverBuffPreBuffDisplayName: "[c/9370db:永不生效： ]"
 }
@@ -116,6 +125,12 @@ Errors: {
 		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safeguard against accidental deletions.]
 		[c/ff0000:If you are sure you want this buff to be auto-deleted, please toggle it as a NeverBuff and try again.]
 		''' */
+}
+
+CombatText: {
+	// PermaBuffed: "{0} is now PermaBuffed!"
+	// NeverBuffed: "{0} is now NeverBuffed!"
+	// AutoDelete: "{0} won't be seen again..."
 }
 
 Keybinds: {
