@@ -89,12 +89,12 @@ GlobalBuff: {
 	}
 
 	AutoDeleteBuff: {
-		// DisplayName: Auto Delete
-		/* Tooltip:
+		DisplayName: 自动删除
+		Tooltip:
 			'''
-			Press [c/ff0000:{0}] to automatically delete this buff every time it's added
-			You will have to reset your NeverBuffs in order to undo this if you change your mind
-			''' */
+			按 [c/ff0000:{0}] 键每当增益出现时会自动删除
+			如果你改变主意，你必须重置[c/9370db:永不生效增益]才能取消此操作
+			'''
 	}
 
 	PermaBuffPreBuffDisplayName: "[c/ffff00:永久生效： ]"
@@ -120,17 +120,17 @@ Errors: {
 		[c/ff0000:这意味着如果增益效果在被设置为“永不生效增益”后被移除，你将无法轻易撤销“永不生效增益”图标更改]
 		[c/ff0000:建议你不要要将召唤物切换为 “永不生效增益” ]
 		'''
-	/* AutoDeleteRequirement:
+	AutoDeleteRequirement:
 		'''
-		[c/ff0000:For a buff to be flagged for auto-deletion, it must be a NeverBuff first. This is a safeguard against accidental deletions.]
-		[c/ff0000:If you are sure you want this buff to be auto-deleted, please toggle it as a NeverBuff and try again.]
-		''' */
+		[c/ff0000:只有“永不生效增益”才能被标记为自动删除，这是防止意外删除的保护措施]
+		[c/ff0000:如果您确定要自动删除此增益，请将其切换为“永不生效增益”并重试]
+		'''
 }
 
 CombatText: {
-	// PermaBuffed: "{0} is now PermaBuffed!"
-	// NeverBuffed: "{0} is now NeverBuffed!"
-	// AutoDelete: "{0} won't be seen again..."
+	PermaBuffed: "{0} 成为永久生效增益"
+	NeverBuffed: "{0} 成为永不生效增益"
+	AutoDelete: "{0} 再也不会出现"
 }
 
 Keybinds: {
@@ -144,7 +144,7 @@ Keybinds: {
 	NotBound: ": <未绑定，请在控键设置中进行绑定>"
 
 	"Auto Delete NeverBuff": {
-		// DisplayName: Auto Delete NeverBuff
-		// Tooltip: Press this key along with left-clicking a NeverBuffed icon to flag it for deletion.
+		DisplayName: 自动删除永不生效增益
+		Tooltip: 按下此键，同时左键单击“永不生效增益”的图标，将其标记为自动删除
 	}
 }
