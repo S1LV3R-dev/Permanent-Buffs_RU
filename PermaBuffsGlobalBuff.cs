@@ -88,12 +88,12 @@ namespace PermaBuffs
                 if (!modPlayer.autoBound)
                 {
                     string autoKeybindAsString = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.DisplayName") + Language.GetTextValue("Mods.PermaBuffs.NotBound");
-                    tip = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoKeybindAsString);
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoKeybindAsString);
                     modPlayer.autoTooltipSeen = false;
                 }
                 else if (!(modPlayer.autoTooltipSeen || config.autoHideKeybindTooltips))
                 {
-                    tip = Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoDeleteKey[0]);
+                    tip += "\n" + Language.GetTextValue("Mods.PermaBuffs.GlobalBuff.AutoDeleteBuff.Tooltip", autoDeleteKey[0]);
                 }
             }
             else if (!BuffInfo.IsActuallyADebuff(type)) // Show permabuff tooltips for Buffs

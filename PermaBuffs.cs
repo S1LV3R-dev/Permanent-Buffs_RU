@@ -98,8 +98,10 @@ namespace PermaBuffs
             // The has banner hook is bugged out to only occasionally activate when the player is hit and nowhere else
             // Meaning I had to instead hook everything that applied the hasBannerBuff hook to my code...
             Terraria.On_Player.HasNPCBannerBuff += HasNPCBannerBuffV2;
-            Terraria.On_Player.ApplyBannerOffenseBuff_int_refHitModifiers += ApplyBannerOffenseBuff;
-            Terraria.On_Player.ApplyBannerDefenseBuff_int_refHurtModifiers += ApplyBannerDefenseBuff;
+            Terraria.On_Player.ApplyBannerOffenseBuff_int_refHitModifiers += ApplyBannerOffenseBuffV2;
+            Terraria.On_Player.ApplyBannerDefenseBuff_int_refHurtModifiers += ApplyBannerDefenseBuffV2;
+            Terraria.On_Player.ApplyBannerDefenseBuff_NPC_refHurtModifiers += ApplyBannerDefenseBuffNPC;
+            Terraria.On_Player.ApplyBannerOffenseBuff_NPC_refHitModifiers += ApplyBannerOffenseBuffNPC;
             Terraria.On_Main.MouseText_DrawBuffTooltip += MouseTextDrawBuffTooltip;
 
             On_Player.UpdateArmorLights += MakeArmorSetBuffsPermanent;
@@ -439,59 +441,59 @@ namespace PermaBuffs
         // This means I had to override all the associated hooks that called this function with my Function call to the hook... SMH
         internal static bool HasNPCBannerBuffV2(On_Player.orig_HasNPCBannerBuff orig, Player player, int bannerType)
         {
-            PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
-
-            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner] || PermaBuffsConfig.instance.keepBannerBuffs)
-            {
-                return modPlayer.activeBanners[bannerType];
-            }
-            else
-            {
-                return orig(player, bannerType);
-            }
+            return HasNPCBannerBuff(player, bannerType);
         }
         internal static bool HasNPCBannerBuff(Player player, int bannerType)
         {
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
 
-            if (modPlayer.alwaysPermanent[BuffID.MonsterBanner] || PermaBuffsConfig.instance.keepBannerBuffs)
-            {
-                return modPlayer.activeBanners[bannerType];
-            }
-            else
-            {
-                return player.HasNPCBannerBuff(bannerType);
-            }
+            // If the banner is permabuffed manually or thorough the config
+            bool hasBannerBuff = modPlayer.alwaysPermanent[BuffID.MonsterBanner] || PermaBuffsConfig.instance.keepBannerBuffs;
+            // If the banner is stored in active banners and it should be kept
+            hasBannerBuff = hasBannerBuff && modPlayer.activeBanners[bannerType];
+            // Finally if there is a banner placed nearby
+            hasBannerBuff = hasBannerBuff || Main.SceneMetrics.NPCBannerBuff[bannerType];
+
+            return hasBannerBuff;
         }
 
-        internal static void ApplyBannerOffenseBuff(Terraria.On_Player.orig_ApplyBannerOffenseBuff_int_refHitModifiers orig, Player player, int bannerID, ref NPC.HitModifiers modifiers)
+        internal static void ApplyBannerOffenseBuff(Player player, int bannerID, ref NPC.HitModifiers modifiers)
         {
-            if (HasNPCBannerBuff(player, bannerID))
-            {
-                // Main.NewText("OffenseHook called");
-                ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
-                modifiers.TargetDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
-            }
-            else
-            {
-                // Main.NewText("OffenseOrig called");
-                orig(player, bannerID, ref modifiers);
-            }
+            if (!HasNPCBannerBuff(player, bannerID))
+                return;
+
+            var effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
+            modifiers.TargetDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
         }
 
-        internal static void ApplyBannerDefenseBuff(Terraria.On_Player.orig_ApplyBannerDefenseBuff_int_refHurtModifiers orig, Player player, int bannerID, ref Player.HurtModifiers modifiers)
+        internal static void ApplyBannerDefenseBuff(Player player, int bannerID, ref Player.HurtModifiers modifiers)
         {
-            if (HasNPCBannerBuff(player, bannerID))
-            {
-                // Main.NewText("DefenseHook called");
-                ItemID.BannerEffect effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
-                modifiers.IncomingDamageMultiplier *= Main.expertMode ? effect.ExpertDamageDealt : effect.NormalDamageDealt;
-            }
-            else
-            {
-                // Main.NewText("DefenseOrig called");
-                orig(player, bannerID, ref modifiers);
-            }
+            if (!HasNPCBannerBuff(player, bannerID))
+                return;
+
+            var effect = ItemID.Sets.BannerStrength[Item.BannerToItem(bannerID)];
+            modifiers.IncomingDamageMultiplier *= Main.expertMode ? effect.ExpertDamageReceived : effect.NormalDamageReceived;
+        }
+
+        internal static void ApplyBannerOffenseBuffV2(Terraria.On_Player.orig_ApplyBannerOffenseBuff_int_refHitModifiers orig, Player player, int bannerID, ref NPC.HitModifiers modifiers)
+        {
+            ApplyBannerOffenseBuff(player, bannerID, ref modifiers);
+        }
+
+        internal static void ApplyBannerDefenseBuffV2(Terraria.On_Player.orig_ApplyBannerDefenseBuff_int_refHurtModifiers orig, Player player, int bannerID, ref Player.HurtModifiers modifiers)
+        {
+            ApplyBannerDefenseBuff(player, bannerID, ref modifiers);
+        }
+        internal static void ApplyBannerOffenseBuffNPC(Terraria.On_Player.orig_ApplyBannerOffenseBuff_NPC_refHitModifiers orig, Player player, NPC npc, ref NPC.HitModifiers modifiers)
+        {
+            int bannerID = Item.NPCtoBanner(npc.BannerID());
+            ApplyBannerOffenseBuff(player, bannerID, ref modifiers);
+        }
+
+        internal static void ApplyBannerDefenseBuffNPC(Terraria.On_Player.orig_ApplyBannerDefenseBuff_NPC_refHurtModifiers orig, Player player, NPC npc, ref Player.HurtModifiers modifiers)
+        {
+            int bannerID = Item.NPCtoBanner(npc.BannerID());
+            ApplyBannerDefenseBuff(player, bannerID, ref modifiers);
         }
 
         internal static void MouseTextDrawBuffTooltip(Terraria.On_Main.orig_MouseText_DrawBuffTooltip orig, Main self, string buffString, ref int X, ref int Y, int buffNameHeight)

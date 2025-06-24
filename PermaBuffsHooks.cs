@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using System.Linq.Expressions;
-using System.Collections.Generic;
 using Terraria.ModLoader.Core;
 
 namespace PermaBuffs
@@ -823,6 +823,26 @@ namespace PermaBuffs
             return index;
         }
 
+    }
+
+    public class MyClass<T>()
+    {
+        public T value;
+        public T Get() { return value; }
+        public void Set(T value) { this.value = value; }
+    }
+    public class AsProperty<T>
+    {
+        MyClass<T> instance;
+        public T property { get { return instance.Get(); } set { instance.Set(value); } }
+        public static implicit operator T(AsProperty<T> wrapper) { return wrapper.property; }
+        public AsProperty(MyClass<T> instance) { this.instance = instance; }
+        public static implicit operator AsProperty<T>(T value)
+        {
+            AsProperty<T> wrapper = new AsProperty<T>(new MyClass<T>());
+            wrapper.property = value;
+            return wrapper;
+        }
     }
 
     /// <summary>

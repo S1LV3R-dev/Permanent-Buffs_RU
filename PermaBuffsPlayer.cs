@@ -127,10 +127,10 @@ namespace PermaBuffs
                 {
                     player.buffTime[buffSlot] = Math.Max(buff.timeLeft, TimeForGolden);
                 }
-                else
+                else if (PermaBuffsConfig.instance.drawBorders)
                 {
                     string toDisplay = Language.GetTextValue("Mods.PermaBuffs.CombatText.PermaBuffed", Lang.GetBuffName(buff.type));
-                    CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Yellow, text: toDisplay);
+                    CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Yellow, text: toDisplay, dramatic: true);
                 }
             }
             else if (neverPermanentKeyPressed)
@@ -144,10 +144,10 @@ namespace PermaBuffs
                     {
                         Main.NewText(Language.GetTextValue("Mods.PermaBuffs.Errors.NeverBuffSummon"));
                     }
-                    else
+                    else if(PermaBuffsConfig.instance.drawBorders)
                     {
                         string toDisplay = Language.GetTextValue("Mods.PermaBuffs.CombatText.NeverBuffed", Lang.GetBuffName(buff.type));
-                        CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Purple, text: toDisplay);
+                        CombatText.NewText(new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height), Color.Purple, text: toDisplay, dramatic: true);
                     }
                 }
             }

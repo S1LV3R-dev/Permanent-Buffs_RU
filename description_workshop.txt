@@ -25,6 +25,7 @@ This is the case with Potion Sickness (patched as of 1.6.1) and certain other mo
 
 Possible future changes: 
 - Patching buffs from any other reports I recieve for other mods.
+- Creating a UI list of modified buffs that can be toggled or untoggled in game.
 - Any other suggestions/bugs as raised in Github or in the discord.
 
 If you've read this far, you might want to join the discord.
