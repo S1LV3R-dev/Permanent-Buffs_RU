@@ -26,13 +26,13 @@ namespace PermaBuffs
         public static List<BuffHook>[] postBuffUpdateHooks { get; internal set; }
         public static List<BuffHook>[] preBuffUpdateHooks { get; internal set; }
 
-        public static On_Player.orig_UpdateArmorSets updateArmor;
+        public static On_Player.orig_UpdateArmorSets OrigUpdateArmor;
         public override void PostSetupContent()
         {
             preBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             postBuffUpdateHooks = new List<BuffHook>[BuffLoader.BuffCount];
             var config = PermaBuffsConfig.instance;
-
+            
             foreach (Mod mod in ModLoader.Mods)
             {
                 // Only allow other mod edits if the user has experimental changes enabled.
@@ -67,8 +67,16 @@ namespace PermaBuffs
 
                                 if (buffType > 0 && buffType < BuffLoader.BuffCount)
                                 {
-                                    postBuffUpdateHooks[buffType] ??= [];
-                                    postBuffUpdateHooks[buffType].Add(hook);
+                                    if (hookClassType.Name == typeof(PermaBuffsPostBuffUpdateHooks).Name)
+                                    {
+                                        postBuffUpdateHooks[buffType] ??= [];
+                                        postBuffUpdateHooks[buffType].Add(hook);
+                                    }
+                                    else if (hookClassType.Name == typeof(PermaBuffsPreBuffUpdateHooks).Name)
+                                    {
+                                        preBuffUpdateHooks[buffType] ??= [];
+                                        preBuffUpdateHooks[buffType].Add(hook);
+                                    }
                                 }
                             }
                         }
@@ -82,7 +90,10 @@ namespace PermaBuffs
                 }
 
             }
+            
         }
+
+        
         public override void Load()
         {
             // Sets my custom function to be used instead of the default
@@ -107,16 +118,19 @@ namespace PermaBuffs
             On_Player.UpdateArmorLights += MakeArmorSetBuffsPermanent;
             On_Player.UpdateArmorSets += UpdateArmorSets;
 
+        
+
             PermaBuffsPlayer.alwaysPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Always Permanent", Microsoft.Xna.Framework.Input.Keys.P);
             PermaBuffsPlayer.neverPermanentKey = KeybindLoader.RegisterKeybind(this, "Toggle Buff Never Permanent", Microsoft.Xna.Framework.Input.Keys.N);
             PermaBuffsPlayer.autoDeleteKey = KeybindLoader.RegisterKeybind(this, "Auto Delete NeverBuff", Microsoft.Xna.Framework.Input.Keys.Delete);
         }
+        
 
         internal static void MakeArmorSetBuffsPermanent(On_Player.orig_UpdateArmorLights orig, Player player)
         {
             orig(player);
 
-            if (updateArmor == null) return;
+            if (OrigUpdateArmor == null) return;
 
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
 
@@ -141,7 +155,7 @@ namespace PermaBuffs
 
                 // Temporarily equip beetle armor
                 player.head = 157; player.body = 105; player.legs = 98;
-                updateArmor(player, player.whoAmI);
+                OrigUpdateArmor(player, player.whoAmI);
                 modPlayer.hadPermaBeetleBuff = true;
             }
             else if (modPlayer.alwaysPermanent[BuffID.BeetleEndurance3])
@@ -151,7 +165,7 @@ namespace PermaBuffs
 
                 // Temporarily equip beetle armor
                 player.head = 157; player.body = 106; player.legs = 98;
-                updateArmor(player, player.whoAmI);
+                OrigUpdateArmor(player, player.whoAmI);
                 modPlayer.hadPermaBeetleBuff = true;
             }
             else if (modPlayer.hadPermaBeetleBuff)
@@ -169,7 +183,7 @@ namespace PermaBuffs
                 player.AddBuff(BuffID.SolarShield3, 5);
 
                 player.head = 171; player.body = 177; player.legs = 112;
-                updateArmor(player, player.whoAmI);
+                OrigUpdateArmor(player, player.whoAmI);
                 setSolarCounterFlag = true;
             }
             else if (setSolarCounterFlag)
@@ -181,7 +195,7 @@ namespace PermaBuffs
             if (modPlayer.alwaysPermanent[BuffID.LeafCrystal])
             {
                 player.head = 80; player.body = 51; player.legs = 47;
-                updateArmor(player, player.whoAmI);
+                OrigUpdateArmor(player, player.whoAmI);
 
                 // Save crystal leaf buff
                 player.crystalLeaf = false; setCrystalLeafFlag = true;
@@ -190,7 +204,7 @@ namespace PermaBuffs
             if (modPlayer.alwaysPermanent[BuffID.StardustGuardianMinion])
             {
                 player.head = 189; player.body = 190; player.legs = 130;
-                updateArmor(player, player.whoAmI);
+                OrigUpdateArmor(player, player.whoAmI);
 
                 stardustGuardianFlag = true;
             }
@@ -201,8 +215,8 @@ namespace PermaBuffs
 
         internal static void UpdateArmorSets(On_Player.orig_UpdateArmorSets orig, Player player, int playerIndex)
         {
-            updateArmor ??= orig;
-            updateArmor(player, playerIndex);
+            OrigUpdateArmor ??= orig;
+            OrigUpdateArmor(player, playerIndex);
         }
         internal static bool NeverBuffsHiddenPatchHasBuff(Terraria.On_Player.orig_HasBuff orig, Player player, int type)
         {

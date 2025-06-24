@@ -463,6 +463,7 @@ namespace PermaBuffs
         /// Adds the buffs previously saved to a queue that is applied when the player first spawns.
         /// </summary>
         /// <param name="tag"></param>
+        
         public override void LoadData(TagCompound tag)
         {
             IList<string> buffs = tag.GetList<string>("Buffs");
@@ -539,6 +540,7 @@ namespace PermaBuffs
             if (flagList.Contains("HideMerman"))
                 hideMerman = true;
         }
+        
         /// <summary>
         /// Saves the buffs the player had before saving and quitting
         /// </summary>
@@ -607,6 +609,7 @@ namespace PermaBuffs
             tag.Add("CurrentBuffTotal", BuffLoader.BuffCount.ToString());
             tag.Add("CurrentNPCTotal", NPCLoader.NPCCount.ToString());
         }
+        
 
         public override void PostUpdateMiscEffects()
         {

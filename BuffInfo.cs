@@ -133,6 +133,8 @@ namespace PermaBuffs
         /// </summary>
         public bool shouldPersistThroughDeath(PermaBuffsPlayer modPlayer, PermaBuffsConfig config)
         {
+            if (!isActive) return false;
+
             bool shouldPersist = false;
             shouldPersist = shouldPersist || (config.keepStationBuffs && isStationBuff);
             shouldPersist = shouldPersist || (config.keepBannerBuffs && type == BuffID.MonsterBanner);
