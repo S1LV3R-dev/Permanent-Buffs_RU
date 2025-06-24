@@ -48,10 +48,6 @@ namespace PermaBuffs
         public int goldenTicks = TimeForGolden;
 
         /// <summary>
-        /// The buffs modified by the mod - these get a special border
-        /// </summary>
-        public bool[] drawQueue;
-        /// <summary>
         /// The queue of buff icons recently modified by a persist after death function temporarily get a golden border
         /// </summary>
         public bool[] goldenQueue;
@@ -100,6 +96,7 @@ namespace PermaBuffs
         {
             goldenQueue = new bool[BuffLoader.BuffCount];
             alwaysPermanent = new bool[BuffLoader.BuffCount];
+            autoDelete = new bool[BuffLoader.BuffCount];
             neverPermanent = new bool[BuffLoader.BuffCount];
             buffItemIDs = new int[BuffLoader.BuffCount];
             activeBanners = new bool[NPCLoader.NPCCount];

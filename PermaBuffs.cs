@@ -443,6 +443,8 @@ namespace PermaBuffs
         {
             return HasNPCBannerBuff(player, bannerType);
         }
+
+        // Has vanilla + mod functionality combined into one function
         internal static bool HasNPCBannerBuff(Player player, int bannerType)
         {
             PermaBuffsPlayer modPlayer = player.GetModPlayer<PermaBuffsPlayer>();
